@@ -1,0 +1,39 @@
+spring:
+  config:
+    import: optional:classpath:configuration.properties
+
+  application:
+    name: authentication-service
+
+  datasource:
+    driver-class-name: ${DB_DRIVER}
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+
+  jpa:
+    hibernate.ddl-auto: update
+    show-sql: true
+    database: ${DB}
+    database-platform: ${DB_PLT}
+
+server:
+    port: ${PORT}
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+    instance:
+      hostname: localhost
+
+application:
+    security:
+      jwt:
+        secret-key: ${KEY}
+        expiration: ${EXPIRATION}
+
+
