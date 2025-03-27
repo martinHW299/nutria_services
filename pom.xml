@@ -6,9 +6,12 @@
   <groupId>com.nutria</groupId>
   <artifactId>nutria-services</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
 
   <name>nutria-services</name>
-  <url>http://www.example.com</url>
+  <modules>
+    <module>eureka-service-registry</module>
+  </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
