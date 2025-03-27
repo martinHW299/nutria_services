@@ -13,6 +13,7 @@
     <module>eureka-service-registry</module>
     <module>authentication-service</module>
     <module>api-gateway</module>
+    <module>common-library</module>
   </modules>
 
   <properties>

@@ -5,6 +5,7 @@ import com.nutria.app.dto.LoginRequest;
 import com.nutria.app.dto.SignupRequest;
 import com.nutria.app.model.UserCredential;
 import com.nutria.app.service.UserCredentialService;
+import com.nutria.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +19,13 @@ public class UserCredentialController {
     private final UserCredentialService userCredentialService;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserCredential> register(@RequestBody SignupRequest signupRequest) {
-        return ResponseEntity.ok(userCredentialService.signup(signupRequest));
+    public ResponseEntity<ApiResponse<UserCredential>> register(@RequestBody SignupRequest signupRequest) {
+        return ResponseEntity.ok(ApiResponse.success(userCredentialService.signup(signupRequest)));
     }
 
     @GetMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok(userCredentialService.login(loginRequest));
+    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(ApiResponse.success(userCredentialService.login(loginRequest)));
     }
 
 

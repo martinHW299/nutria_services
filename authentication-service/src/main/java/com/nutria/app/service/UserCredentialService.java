@@ -4,6 +4,7 @@ import com.nutria.app.dto.LoginRequest;
 import com.nutria.app.dto.SignupRequest;
 import com.nutria.app.model.UserCredential;
 import com.nutria.app.repository.UserCredentialRepository;
+import com.nutria.common.exceptions.ValidationException;
 import com.thoughtworks.xstream.converters.reflection.ObjectAccessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,7 +30,7 @@ public class UserCredentialService {
         String password = signupRequest.getPassword();
 
         if (userCredentialRepository.findByEmail(email).isPresent()) {
-            throw new ObjectAccessException("You are already registered in NUTRIA");
+            throw new ValidationException("You are already registered in NUTRIA");
         }
 
         UserCredential userCredential = UserCredential.builder()
