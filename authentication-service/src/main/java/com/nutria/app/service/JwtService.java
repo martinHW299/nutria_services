@@ -1,6 +1,8 @@
 package com.nutria.app.service;
 
 
+import com.nutria.app.model.UserCredential;
+import com.nutria.app.model.UserProfile;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -23,10 +25,15 @@ public class JwtService {
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
 
-    public String generateToken(Long id, String username) {
+    public String generateToken(UserCredential userCredential, UserProfile userProfile) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", id);
-        return createToken(claims, username);
+        claims.put("id", userCredential.getId());
+        claims.put("weightGoal", userProfile.getWeightGoal());
+        //claims.put("activityLevel", userProfile.getActivityLevel());
+        claims.put("bmr", userProfile.getBmr());
+        claims.put("bmi", userProfile.getBmi());
+        claims.put("tdee", userProfile.getTdee());
+        return createToken(claims, userCredential.getEmail());
     }
 
     private String createToken(Map<String, Object> claims, String email) {
@@ -39,13 +46,16 @@ public class JwtService {
                 .compact();
     }
 
+    public Long extractId(String token) {
+        return Long.valueOf(extractClaim(token, Claims::getId));
+    }
 
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
+        final Claims claims = extractAllClaims(token.replace("Bearer ", "").trim());
         return claimsResolver.apply(claims);
     }
 

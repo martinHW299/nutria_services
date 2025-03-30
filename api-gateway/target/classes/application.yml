@@ -15,6 +15,13 @@ spring:
           filters:
             - name: AuthFilter
 
+        - id: image-processing-service
+          uri: lb://image-processing-service
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - name: AuthFilter
+
 server:
   port: ${PORT}
 

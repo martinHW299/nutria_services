@@ -28,16 +28,14 @@ public class UserCredential {
 
     private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private UserStatus status;
+    private String status;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
+    @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     // Enum for user status
@@ -51,7 +49,7 @@ public class UserCredential {
         UserStatus(String code) {
             this.code = code;
         }
-
     }
 
 }
+
