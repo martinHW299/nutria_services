@@ -1,0 +1,110 @@
+### General Ignore Rules ###
+*.iml
+*.log
+*.pyc
+*.pyo
+*.swp
+*.swo
+*.DS_Store
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.7z
+*.gz
+*.tar
+*.rar
+
+# Ignore node_modules if frontend exists
+node_modules/
+npm-debug.log
+yarn-error.log
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.ipr
+*.iworkspace.xml
+.idea_modules/
+*.iml
+out/
+
+### Eclipse ###
+.classpath
+.project
+.settings/
+
+### VS Code ###
+.vscode/
+
+### Logs ###
+logs/
+log/
+debug.log
+trace.log
+nohup.out
+
+### Spring Boot ###
+.env
+*.env
+*.pid
+*.seed
+config/application.properties
+config/application.yml
+config/application-*.yml
+config/application-*.properties
+
+### Security ###
+secrets.env
+.envrc
+*.key
+*.pem
+*.p12
+*.crt
+*.cer
+*.jks
+*.keystore
+*.truststore
+
+### Database ###
+*.db
+*.sqlite
+*.sql
+
+### Temp Files ###
+*.swp
+*.swo
+*.bak
+*.tmp
+
+### Local Configuration ###
+**/configuration.properties
+**/local.properties
+**/config/local-*.yml
+**/config/local-*.properties
+
+### OS-Specific ###
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
