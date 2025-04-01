@@ -1,25 +1,16 @@
 package com.nutria.app.service;
 
-import aj.org.objectweb.asm.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nutria.app.dto.MacrosDataRequest;
 import com.nutria.app.model.MacrosData;
 import com.nutria.app.repository.MacrosDataRepository;
-import com.nutria.common.exceptions.ValidationException;
-import com.nutria.common.response.ApiResponse;
+import com.nutria.common.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -27,17 +18,17 @@ import java.util.Optional;
 public class MacrosDataService {
 
     private final AiService aiService;
-    private final JwtService jwtService;
     private final ObjectMapper objectMapper;
     private final MacrosDataRepository macrosDataRepository;
 
     public List<MacrosData> getAll() { return macrosDataRepository.findAll(); }
 
-    public Optional<MacrosData> getById(String id) { return macrosDataRepository.findById(id); }
+    public MacrosData getById(String id) {
+        return macrosDataRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Food data not found"));
+    }
 
-    public MacrosData saveMacros(String token, String imageBase64) throws JsonProcessingException {
+    public MacrosData saveMacros(Long userId, String imageBase64) throws JsonProcessingException {
 
-        Long userId = jwtService.extractId(token);
         String aiResponse = aiService.getAnswer(imageBase64);
 
         Map parsedData = objectMapper.readValue(aiResponse, Map.class);
@@ -68,6 +59,10 @@ public class MacrosDataService {
         }
     }
 
-    public void delete(String id) { macrosDataRepository.deleteById(id); }
+    public MacrosData delete(String id) {
+        MacrosData macrosData = macrosDataRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Food data not found"));
+        macrosData.setStatus(MacrosData.MacrosStatus.INACTIVE.getCode());
+        return macrosDataRepository.save(macrosData);
+    }
 
 }

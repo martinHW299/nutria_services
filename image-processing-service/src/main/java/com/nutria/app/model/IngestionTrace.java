@@ -1,5 +1,6 @@
 package com.nutria.app.model;
 
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,43 +13,39 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "user_credentials")
-public class UserCredential {
+@Table(name = "ingestion_trace")
+public class IngestionTrace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String email;
+    private Long userId;
 
-    private String password;
+    private String macrosDataId;
 
-    private String name;
-
-    private String lastName;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(referencedColumnName = "id")
+    private FoodImage foodImage;
 
     private String status;
 
     @CreationTimestamp
-    @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    // Enum for user status
     @Getter
-    public enum UserStatus {
+    public enum DataStatus {
         ACTIVE("AC"),
         INACTIVE("IN");
 
         private final String code;
 
-        UserStatus(String code) {
+        DataStatus(String code) {
             this.code = code;
         }
     }
 
 }
-

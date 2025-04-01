@@ -4,8 +4,8 @@ package com.nutria.app.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
@@ -24,12 +24,10 @@ public class MacrosData {
     private double servingSize;
     private String status;
 
-    @CreationTimestamp
-    @Column(updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(updatable = false)
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     @Getter

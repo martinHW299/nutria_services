@@ -1,17 +1,13 @@
 package com.nutria.app.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nutria.app.model.MacrosData;
 import com.nutria.app.service.MacrosDataService;
 import com.nutria.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,14 +19,18 @@ public class MacrosDataController {
     @GetMapping
     public List<MacrosData> getAll() { return macrosDataService.getAll(); }
 
-    @GetMapping("/{id}")
-    public Optional<MacrosData> getById(@PathVariable String id) { return macrosDataService.getById(id); }
-
-    @PostMapping("/save")
-    public ResponseEntity<ApiResponse<MacrosData>> create(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) throws JsonProcessingException {
-        return ResponseEntity.ok(ApiResponse.success(macrosDataService.saveMacros(token, payload.get("image"))));
+    @GetMapping("/find/{id}")
+    public ResponseEntity<ApiResponse<MacrosData>> getById(@PathVariable("id") String id) {
+        return ResponseEntity.ok(ApiResponse.success(macrosDataService.getById(id)));
     }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable String id) { macrosDataService.delete(id); }
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<ApiResponse<MacrosData>> deleteById(@PathVariable("id") String id) {
+        return ResponseEntity.ok(ApiResponse.success(macrosDataService.delete(id)));
+    }
+
+
+
+
+
 }

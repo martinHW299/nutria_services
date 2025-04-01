@@ -7,10 +7,8 @@ import com.nutria.app.model.UserProfile;
 import com.nutria.app.repository.UserProfileRepository;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
@@ -62,9 +60,6 @@ public class UserProfileService {
 
     public UserProfile saveUserProfile(UserCredential userCredential, SignupRequest signupRequest) {
         try {
-
-            log.info("user credential in user profile: {}", userCredential);
-            log.info("sign up request in user profile: {}", signupRequest.getName());
             double bmr = calculateBmr(signupRequest);
 
             UserProfile userProfile = UserProfile.builder()
@@ -82,7 +77,7 @@ public class UserProfileService {
                     .tdee(calculateTdee(bmr, signupRequest))
                     .caloricAdjustment(UserProfile.CaloricAdjustment.valueOf(signupRequest.getCaloricAdjustment()).getValue())
                     .build();
-            log.info("user profile save: {}", userProfile);
+
             userProfileRepository.save(userProfile);
 
             return userProfile;

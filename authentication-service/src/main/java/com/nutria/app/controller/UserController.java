@@ -4,15 +4,13 @@ package com.nutria.app.controller;
 import com.nutria.app.dto.LoginRequest;
 import com.nutria.app.dto.SignupRequest;
 import com.nutria.app.model.UserProfile;
-import com.nutria.app.service.UserProfileService;
 import com.nutria.app.service.UserService;
 import com.nutria.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")

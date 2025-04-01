@@ -18,7 +18,7 @@ spring:
         - id: image-processing-service
           uri: lb://image-processing-service
           predicates:
-            - Path=/api/v1/ai/**
+            - Path=/api/v1/food-trace/**
           filters:
             - name: AuthFilter
 

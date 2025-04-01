@@ -2,8 +2,6 @@ package com.nutria.app.filter;
 
 
 import com.nutria.app.util.JwtUtil;
-import io.jsonwebtoken.Claims;
-import jakarta.ws.rs.ForbiddenException;
 import org.apache.http.HttpHeaders;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
