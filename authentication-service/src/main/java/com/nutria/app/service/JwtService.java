@@ -46,10 +46,6 @@ public class JwtService {
                 .compact();
     }
 
-    public Long extractId(String token) {
-        return Long.valueOf(extractClaim(token, Claims::getId));
-    }
-
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }

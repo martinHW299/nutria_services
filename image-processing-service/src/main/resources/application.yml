@@ -5,6 +5,15 @@ spring:
   application:
     name: image-processing-service
 
+  data:
+    mongodb:
+      authentication-database: ${MONGO_AUTH}
+      username: ${MONGO_USER}
+      password: ${MONGO_PASS}
+      database: ${MONGO_DB}
+      port: ${MONGO_PORT}
+      host: ${MONGO_HOST}
+
   datasource:
     driver-class-name: ${DB_DRIVER}
     url: ${DB_URL}
@@ -12,13 +21,18 @@ spring:
     password: ${DB_PASS}
 
   jpa:
-    hibernate.ddl-auto: update
+    hibernate.ddl-auto: create-drop
     show-sql: true
     database: ${DB}
     database-platform: ${DB_PLT}
 
 server:
-  port: ${PORT}
+  port: ${SERVER_PORT}
+
+gemini:
+  api:
+    url: ${API_URL}
+    key: ${API_KEY}
 
 eureka:
   client:
@@ -27,11 +41,12 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka
 
-  instance:
-    hostname: localhost
+    instance:
+      hostname: localhost
 
+application:
+  security:
+    jwt:
+      secret-key: ${KEY}
+      expiration: ${EXPIRATION}
 
-security:
-  jwt:
-    secret-key: ${KEY}
-    expiration: ${EXPIRATION}
