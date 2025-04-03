@@ -5,9 +5,12 @@ import com.nutria.app.model.FoodImage;
 import com.nutria.app.model.IngestionTrace;
 import com.nutria.app.model.MacrosData;
 import com.nutria.app.repository.IngestionTraceRepository;
+import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 
 
 @Service
@@ -35,4 +38,16 @@ public class IngestionTraceService {
         return ingestionTraceRepository.save(ingestionTrace);
     }
 
+    public List<IngestionTrace> getIngestionTraceByPeriod(String token, Date dateInit, Date dateEnd) {
+        try {
+            if (dateInit.after(dateEnd)) {
+                throw new ValidationException("Initial date can not be higher that final date");
+            } else {
+                Long userId = jwtService.extractId(token);
+                return ingestionTraceRepository.getDailyIntakeByDateRange(userId, dateInit, dateEnd);
+            }
+        } catch (Exception e) {
+            throw new ValidationException("Periodic request of ingestion tracing failed");
+        }
+    }
 }
