@@ -1,7 +1,16 @@
 FROM eclipse-temurin:21
-LABEL authors="martinhachiya"
+LABEL maintainer="martinhachiya"
 
 WORKDIR /app
-COPY target/image-processing-service.jar image-processing-service.jar
-EXPOSE 8083
-ENTRYPOINT ["java", "-jar", "image-processing-service.jar"]
+
+# Copy the pre-built JAR (from your host machine)
+COPY target/*.jar app.jar
+
+# Run as non-root user for security
+RUN addgroup --system spring && \
+    adduser --system --ingroup spring spring && \
+    chown spring:spring /app
+USER spring:spring
+
+EXPOSE 8082
+ENTRYPOINT ["java", "-jar", "app.jar"]

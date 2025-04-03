@@ -19,7 +19,7 @@ public class IngestionTraceService {
     private final FoodImageService foodImageService;
     private final IngestionTraceRepository ingestionTraceRepository;
 
-    public IngestionTrace save(String token, String imagesBase64) throws IOException {
+    public IngestionTrace save(String token, String imagesBase64) {
 
         Long userId = jwtService.extractId(token);
         MacrosData macrosData = macrosDataService.saveMacros(userId, imagesBase64);

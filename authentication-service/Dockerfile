@@ -1,7 +1,16 @@
 FROM eclipse-temurin:21
-LABEL authors="martinhachiya"
+LABEL maintainer="martinhachiya"
 
 WORKDIR /app
-COPY target/authentication-service.jar authentication-service.jar
-EXPOSE 8082
-ENTRYPOINT ["java", "-jar", "authentication-service.jar"]
+
+# Copy the pre-built JAR (from your host machine)
+COPY target/*.jar app.jar
+
+# Run as non-root user for security
+RUN addgroup --system spring && \
+    adduser --system --ingroup spring spring && \
+    chown spring:spring /app
+USER spring:spring
+
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "app.jar"]

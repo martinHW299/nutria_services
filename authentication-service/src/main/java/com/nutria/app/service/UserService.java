@@ -9,7 +9,6 @@ import com.nutria.app.repository.UserProfileRepository;
 import com.nutria.common.exceptions.ResourceNotFoundException;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -30,11 +28,11 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final UserProfileService userProfileService;
 
-    public void isUserAlreadyRegistered(LoginRequest loginRequest) {
-        if (userCredentialRepository.findByEmail(loginRequest.getEmail()).isPresent()) {
-            throw new ValidationException("You are already registered in NUTRIA");
-        }
-    }
+//    public void isUserAlreadyRegistered(LoginRequest loginRequest) {
+//        if (userCredentialRepository.findByEmail(loginRequest.getEmail()).isPresent()) {
+//            throw new ValidationException("You are already registered in NUTRIA");
+//        }
+//    }
 
     public UserProfile signup(SignupRequest signupRequest) {
 
@@ -62,7 +60,6 @@ public class UserService {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
         UserCredential userCredential = userCredentialRepository.findByEmail(email).orElseThrow(()->new AuthenticationServiceException("You don't have an account. Let's create one"));
-        log.info("user profile found: {}", userProfileRepository.findUserProfileByUserCredential(userCredential));
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
         if (authentication.isAuthenticated()) {

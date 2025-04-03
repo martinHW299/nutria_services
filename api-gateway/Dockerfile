@@ -1,7 +1,16 @@
 FROM eclipse-temurin:21
-LABEL authors="martinhachiya"
+LABEL maintainer="martinhachiya"
 
 WORKDIR /app
-COPY target/api-gateway.jar api-gateway.jar
+
+# Copy the pre-built JAR (from your host machine)
+COPY target/*.jar app.jar
+
+# Run as non-root user for security
+RUN addgroup --system spring && \
+    adduser --system --ingroup spring spring && \
+    chown spring:spring /app
+USER spring:spring
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "api-gateway.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

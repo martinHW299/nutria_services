@@ -1,7 +1,16 @@
 FROM eclipse-temurin:21
-LABEL authors="martinhachiya"
+LABEL maintainer="martinhachiya"
 
 WORKDIR /app
-COPY target/eureka-service-registry.jar eureka-service.jar
+
+# Copy the pre-built JAR (from your host machine)
+COPY target/*.jar app.jar
+
+# Run as non-root user for security
+RUN addgroup --system spring && \
+    adduser --system --ingroup spring spring && \
+    chown spring:spring /app
+USER spring:spring
+
 EXPOSE 8761
-ENTRYPOINT ["java", "-jar", "eureka-service.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
