@@ -21,6 +21,7 @@ public class ApiResponse<T>{
         response.setStatus(HttpStatus.OK.value());
         response.setMessage("Success");
         response.setData(data);
+        response.setTimestamp(LocalDateTime.now());
         return response;
     }
     public static <T> ApiResponse<T> error(HttpStatus status, String message) {
@@ -28,6 +29,7 @@ public class ApiResponse<T>{
         response.setStatus(status.value());
         response.setMessage(message);
         response.setData(null);
+        response.setTimestamp(LocalDateTime.now());
         return response;
     }
 }

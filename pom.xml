@@ -15,7 +15,7 @@
     <module>api-gateway</module>
     <module>common-library</module>
     <module>image-processing-service</module>
-    <module>trace-nutrition-data</module>
+    <module>trace-nutrition-service</module>
   </modules>
 
   <properties>

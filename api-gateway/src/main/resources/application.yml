@@ -22,6 +22,13 @@ spring:
           filters:
             - name: AuthFilter
 
+        - id: trace-nutrition-service
+          uri: lb://trace-nutrition-service
+          predicates:
+            - Path=/api/v1/nutrition-progress/**
+          filters:
+            - name: AuthFilter
+
 server:
   port: ${PORT}
 
@@ -33,6 +40,10 @@ eureka:
       defaultZone: http://localhost:8761/eureka
     instance:
       hostname: localhost
+    registry-fetch-interval-seconds: 5
+    cache-refresh-executor-thread-pool-size: 2
+
+
 application:
   security:
     jwt:

@@ -2,19 +2,18 @@ package com.nutria.app.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoTimeoutException;
 import com.nutria.app.model.MacrosData;
 import com.nutria.app.repository.MacrosDataRepository;
 import com.nutria.common.exceptions.ResourceNotFoundException;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MacrosDataService {
@@ -45,8 +44,10 @@ public class MacrosDataService {
             macrosData.setServingSize(parseNumericValue((String) parsedData.get("serving_size")));
             macrosData.setStatus(MacrosData.MacrosStatus.ACTIVE.getCode());
             return macrosDataRepository.save(macrosData);
-        } catch (IOException e) {
-            throw new ValidationException("Failed to save food macros data");
+        } catch (MongoTimeoutException e) {
+            throw new ValidationException("Could not connect to the database. Please try again later.");
+        } catch (JsonProcessingException e) {
+            throw new ValidationException("Invalid data format received from AI service");
         }
     }
 
@@ -71,3 +72,4 @@ public class MacrosDataService {
     }
 
 }
+

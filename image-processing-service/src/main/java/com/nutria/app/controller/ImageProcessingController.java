@@ -1,6 +1,7 @@
 package com.nutria.app.controller;
 
 
+import com.nutria.app.dto.IngestionTraceDTO;
 import com.nutria.app.model.IngestionTrace;
 import com.nutria.app.service.IngestionTraceService;
 import com.nutria.common.response.ApiResponse;
@@ -26,8 +27,13 @@ public class ImageProcessingController {
         return ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, payload.get("image"))));
     }
 
+    @PostMapping("/delete")
+    public ResponseEntity<ApiResponse<IngestionTrace>> delete(@RequestParam("intake") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(ingestionTraceService.delete(id)));
+    }
+
     @GetMapping("/find")
-    public ResponseEntity<ApiResponse<List<IngestionTrace>>> getIngestionTracePeriod(
+    public ResponseEntity<ApiResponse<List<IngestionTraceDTO>>> getIngestionTracePeriod(
             @RequestHeader("Authorization") String token,
             @RequestParam("init") @DateTimeFormat(pattern = "yyyy-MM-dd") Date initDate,
             @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate

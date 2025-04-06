@@ -17,7 +17,7 @@
         </processorPath>
         <module name="api-gateway" />
         <module name="image-processing-service" />
-        <module name="trace-nutrition-data" />
+        <module name="trace-nutrition-service" />
         <module name="authentication-service" />
         <module name="eureka-service-registry" />
         <module name="common-library" />
@@ -26,6 +26,7 @@
     <bytecodeTargetLevel>
       <module name="auth-service" target="17" />
       <module name="common-module" target="17" />
+      <module name="trace-nutrition-data" target="17" />
       <module name="untitled" target="17" />
     </bytecodeTargetLevel>
   </component>

@@ -7,6 +7,7 @@ SERVICES=(
   "api-gateway"
   "authentication-service"
   "image-processing-service"
+  "trace-nutrition-service"
 )
 
 echo "=== Building all Nutria services ==="

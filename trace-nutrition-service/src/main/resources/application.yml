@@ -3,7 +3,7 @@ spring:
     import: optional:classpath:configuration.properties
 
   application:
-    name: trace_nutrition_data
+    name: trace-nutrition-service
 
   datasource:
     driver-class-name: ${DB_DRIVER}
