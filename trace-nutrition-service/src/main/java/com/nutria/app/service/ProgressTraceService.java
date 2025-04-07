@@ -1,18 +1,20 @@
 package com.nutria.app.service;
 
 import com.nutria.app.dto.MacrosData;
+import com.nutria.app.model.ProgressTrace;
+import com.nutria.app.model.WeightTrace;
+import com.nutria.app.repository.ProgressTraceRepository;
+import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,17 +25,24 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProgressTraceService {
 
-    private final RestTemplate restTemplate;
+    private final JwtService jwtService;
     private final WebClient.Builder webClientBuilder;
+    private final WeightTraceService weightTraceService;
+    private final ProgressTraceRepository progressTraceRepository;
 
-    public List<?> fetchMacrosData(String token, LocalDate initDate, LocalDate endDate) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-d");
-        String formattedInitDate = initDate.format(formatter);
-        String formattedEndDate = endDate.format(formatter);
-
-        String url = "/api/v1/food-trace/find?init=" + formattedInitDate + "&end=" + formattedEndDate;
-
+    public List<MacrosData> fetchMacrosData(String token, Date initDate, Date endDate) {
         try {
+            if (initDate.after(endDate)) {
+                throw new ValidationException("End periodic date can not be before initial date");
+            }
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+            String formattedInitDate = dateFormat.format(initDate);
+            String formattedEndDate = dateFormat.format(endDate);
+
+            String url = "/api/v1/food-trace/find?init=" + formattedInitDate + "&end=" + formattedEndDate;
+            log.info("url: {}", url);
             // First, get the response as a Map
             Map response = webClientBuilder.build()
                     .get()
@@ -77,5 +86,45 @@ public class ProgressTraceService {
         macrosData.setFats(((Number) map.get("fats")).doubleValue());
         return macrosData;
     }
+
+
+    public ProgressTrace savePeriodicProgressTrace(String token, Date initDate, Date endDate) {
+
+        List<MacrosData> macrosDataList = fetchMacrosData(token, initDate, endDate);
+        Long userId = jwtService.extractId(token);
+
+        double consumedCalories = 0.0;
+        double consumedProteins = 0.0;
+        double consumedCarbs = 0.0;
+        double consumedFats = 0.0;
+
+        for (MacrosData macrosData : macrosDataList) {
+            consumedCalories += macrosData.getCalories();
+            consumedProteins += macrosData.getProteins();
+            consumedCarbs += macrosData.getCarbs();
+            consumedFats += macrosData.getFats();
+        }
+
+        LocalDate initLocalDate = initDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endtLocalDate = endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        long daysDifference = ChronoUnit.DAYS.between(initLocalDate, endtLocalDate);
+
+        WeightTrace weightTrace = weightTraceService.saveWeightTrace(token, daysDifference, consumedCalories);
+
+        ProgressTrace progressTrace = ProgressTrace.builder()
+                .userId(userId)
+                .dateInit(initDate)
+                .dateEnt(endDate)
+                .caloriesConsumed(consumedCalories)
+                .proteinsConsumed(consumedProteins)
+                .carbsConsumed(consumedCarbs)
+                .fatsConsumed(consumedFats)
+                .weightTrace(weightTrace)
+                .build();
+
+        return progressTraceRepository.save(progressTrace);
+
+    }
+
 
 }

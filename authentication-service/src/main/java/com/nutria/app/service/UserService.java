@@ -27,12 +27,7 @@ public class UserService {
     private final AuthenticationManager authenticationManager;
     private final UserProfileRepository userProfileRepository;
     private final UserProfileService userProfileService;
-
-//    public void isUserAlreadyRegistered(LoginRequest loginRequest) {
-//        if (userCredentialRepository.findByEmail(loginRequest.getEmail()).isPresent()) {
-//            throw new ValidationException("You are already registered in NUTRIA");
-//        }
-//    }
+    private final TokenService tokenService;
 
     public UserProfile signup(SignupRequest signupRequest) {
 
@@ -65,7 +60,9 @@ public class UserService {
         if (authentication.isAuthenticated()) {
             UserProfile userProfile = userProfileRepository.findUserProfileByUserCredential(userCredential);
             setActiveUser(userCredential);
-            return jwtService.generateToken(userCredential, userProfile);
+            String token = jwtService.generateToken(userCredential, userProfile);
+            tokenService.saveToken(token, userCredential);
+            return token;
         } else {
             throw new AuthenticationServiceException("Invalid access");
         }

@@ -36,6 +36,12 @@ public class UserProfileService {
         return bmr * UserProfile.ActivityLevel.valueOf(signupRequest.getActivityLevel()).getValue();
     }
 
+    public double calculateTdeeAdjusted(double bmr, SignupRequest signupRequest) {
+        double caloricAdjustment = UserProfile.CaloricAdjustment.valueOf(signupRequest.getCaloricAdjustment()).getValue();
+        double baseTdee = calculateTdee(bmr, signupRequest);
+        return baseTdee + (baseTdee * caloricAdjustment);
+    }
+
     public SuggestedGoal suggestedGoal(SignupRequest signupRequest) {
 
         double bmiMin = UserProfile.BmiBalance.MAINTAIN.getMinBmi();
@@ -74,7 +80,7 @@ public class UserProfileService {
                     .activityLevel(UserProfile.ActivityLevel.valueOf(signupRequest.getActivityLevel()).getValue())
                     .bmr(bmr)
                     .bmi(calculateBmi(signupRequest))
-                    .tdee(calculateTdee(bmr, signupRequest))
+                    .tdee(calculateTdeeAdjusted(bmr, signupRequest))
                     .caloricAdjustment(UserProfile.CaloricAdjustment.valueOf(signupRequest.getCaloricAdjustment()).getValue())
                     .build();
 

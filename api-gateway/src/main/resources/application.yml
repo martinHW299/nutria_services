@@ -25,7 +25,7 @@ spring:
         - id: trace-nutrition-service
           uri: lb://trace-nutrition-service
           predicates:
-            - Path=/api/v1/nutrition-progress/**
+            - Path=/api/v1/nutrition-trace/**
           filters:
             - name: AuthFilter
 

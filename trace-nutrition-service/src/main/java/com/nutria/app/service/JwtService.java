@@ -21,19 +21,19 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("id", Long.class));
     }
 
-    public double extractWeightTdee(String token) {
-        return extractClaim(token, claims -> claims.get("tdee", double.class));
+    public Double extractTdee(String token) {
+        return extractClaim(token, claims -> claims.get("tdee", Double.class));
     }
 
-    public double extractWeightGoal(String token) {
-        return extractClaim(token, claims -> claims.get("weightGoal", double.class));
+    public Double extractWeightGoal(String token) {
+        return extractClaim(token, claims -> claims.get("weightGoal", Double.class));
     }
 
-    public double extractWeightBmr(String token) {
+    public double extractBmr(String token) {
         return extractClaim(token, claims -> claims.get("bmr", double.class));
     }
 
-    public double extractWeightBmi(String token) {
+    public double extractBmi(String token) {
         return extractClaim(token, claims -> claims.get("bmi", double.class));
     }
 

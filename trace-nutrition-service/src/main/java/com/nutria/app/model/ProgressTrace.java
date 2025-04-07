@@ -9,7 +9,9 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Data
@@ -24,12 +26,12 @@ public class ProgressTrace {
     private Long id;
 
     private Long userId;
-    private LocalDateTime dateInit;
-    private LocalDateTime dateEnt;
-    private double calories_consumed;
-    private double proteins_consumed;
-    private double carbs_consumed;
-    private double fats_consumed;
+    private Date dateInit;
+    private Date dateEnt;
+    private double caloriesConsumed;
+    private double proteinsConsumed;
+    private double carbsConsumed;
+    private double fatsConsumed;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "weight_trace_id", referencedColumnName = "id")

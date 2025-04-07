@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @Builder
@@ -22,9 +24,8 @@ public class WeightTrace {
 
     private Long userId;
     private double traceWeight;
-    private double traceBmi;
 
     @CreationTimestamp
-    private double createAt;
+    private LocalDateTime recDate;
 
 }

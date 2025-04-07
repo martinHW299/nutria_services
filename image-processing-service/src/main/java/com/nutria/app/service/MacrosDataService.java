@@ -44,6 +44,7 @@ public class MacrosDataService {
             macrosData.setServingSize(parseNumericValue((String) parsedData.get("serving_size")));
             macrosData.setStatus(MacrosData.MacrosStatus.ACTIVE.getCode());
             return macrosDataRepository.save(macrosData);
+
         } catch (MongoTimeoutException e) {
             throw new ValidationException("Could not connect to the database. Please try again later.");
         } catch (JsonProcessingException e) {
