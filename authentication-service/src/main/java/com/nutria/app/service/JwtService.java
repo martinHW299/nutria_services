@@ -50,8 +50,12 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String cleanJwt(String token) {
+        return token.replace("Bearer ", "").trim();
+    }
+
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token.replace("Bearer ", "").trim());
+        final Claims claims = extractAllClaims(cleanJwt(token));
         return claimsResolver.apply(claims);
     }
 

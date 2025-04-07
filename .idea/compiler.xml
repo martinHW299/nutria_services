@@ -15,9 +15,9 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
-        <module name="api-gateway" />
         <module name="image-processing-service" />
         <module name="trace-nutrition-service" />
+        <module name="api-gateway" />
         <module name="authentication-service" />
         <module name="eureka-service-registry" />
         <module name="common-library" />

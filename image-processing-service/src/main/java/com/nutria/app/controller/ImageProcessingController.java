@@ -8,12 +8,14 @@ import com.nutria.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,9 +24,10 @@ public class ImageProcessingController {
 
     private final IngestionTraceService ingestionTraceService;
 
+    @Async
     @PostMapping("/save")
-    public ResponseEntity<ApiResponse<IngestionTrace>> save(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) throws IOException {
-        return ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, payload.get("image"))));
+    public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) throws IOException {
+        return CompletableFuture.completedFuture(ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, payload.get("image")))));
     }
 
     @PostMapping("/delete")

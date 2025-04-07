@@ -31,14 +31,13 @@ public class TokenService {
     }
 
     public boolean isTokenValid(String token) {
-        log.info("validate token: {}", tokenRepository.findByToken(token));
         return tokenRepository.findByToken(token)
                 .map(t -> !t.isRevoked() && !t.isExpired())
                 .orElse(false);
     }
 
     public void revokeToken(String token) {
-        log.info("revoke token: {}", tokenRepository.findByToken(token));
+        token = token.substring(7).trim();
         tokenRepository.findByToken(token)
                 .ifPresent(t -> {
                     t.setRevoked(true);

@@ -8,8 +8,11 @@ import com.nutria.app.service.TokenService;
 import com.nutria.app.service.UserService;
 import com.nutria.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -31,16 +34,14 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String token) {
-        String t = token.substring(7);
-        tokenService.revokeToken(t);
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        tokenService.revokeToken(token);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String token) {
-        String t = token.substring(7);
-        boolean isValid = tokenService.isTokenValid(t);
+    public ResponseEntity<Boolean> validateToken(@RequestBody Map<String, String> payload) {
+        boolean isValid = tokenService.isTokenValid(payload.get("token"));
         return ResponseEntity.ok(isValid);
     }
 
