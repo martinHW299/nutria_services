@@ -5,49 +5,83 @@ import com.nutria.app.dto.SuggestedGoal;
 import com.nutria.app.model.UserCredential;
 import com.nutria.app.model.UserProfile;
 import com.nutria.app.repository.UserProfileRepository;
+import com.nutria.app.utility.InputValidator;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
+    private final InputValidator inputValidator;
 
-    public double calculateBmr(SignupRequest signupRequest) {
-        int age = signupRequest.getAge();
-        int gender = UserProfile.Gender.valueOf(signupRequest.getGender()).getValue();
-        double height = signupRequest.getHeight();
-        double weight = signupRequest.getWeight();
+    public UserProfile saveUserProfile(UserCredential userCredential, SignupRequest signupRequest) {
+        try {
+            inputValidator.validateSignUpRequest(signupRequest);
 
-        return ((10 * weight) + (6.25 * height) - (5 * age) + gender);
+            double bmr = calculateBmr(signupRequest);
+            double bmi = calculateBmi(signupRequest);
+            double tdee = calculateTdeeAdjusted(bmr, signupRequest);
+            int genderCode = getGenderCode(signupRequest.getGender());
+            double caloricAdjustment = getCaloricAdjustment(signupRequest.getCaloricAdjustment());
+            double activityLevel = getActivityLevel(signupRequest.getActivityLevel());
+
+            UserProfile userProfile = UserProfile.builder()
+                    .userCredential(userCredential)
+                    .userName(signupRequest.getName())
+                    .userLastname(signupRequest.getLastName())
+                    .age(signupRequest.getAge())
+                    .gender(signupRequest.getGender())
+                    .height(signupRequest.getHeight())
+                    .weight(signupRequest.getWeight())
+                    .weightGoal(signupRequest.getWeightGoal())
+                    .activityLevel(activityLevel)
+                    .bmr(bmr)
+                    .bmi(bmi)
+                    .tdee(tdee)
+                    .caloricAdjustment(caloricAdjustment)
+                    .build();
+
+            return userProfileRepository.save(userProfile);
+
+        } catch (Exception e) {
+            throw new ValidationException("Error saving user profile: " + e.getMessage());
+        }
     }
 
-    public double calculateBmi(SignupRequest signupRequest) {
-        double height = signupRequest.getHeight();
-        double weight = signupRequest.getWeight();
-        double m = height / 100;
-        double i = Math.pow(m, 2);
-        return weight / i;
+    // === CALCULATIONS ===
+
+    public double calculateBmr(SignupRequest req) {
+        int gen = getGenderCode(req.getGender());
+        return (10 * req.getWeight()) + (6.25 * req.getHeight()) - (5 * req.getAge()) + gen;
     }
 
-    public double calculateTdee(double bmr, SignupRequest signupRequest) {
-        return bmr * UserProfile.ActivityLevel.valueOf(signupRequest.getActivityLevel()).getValue();
+    public double calculateBmi(SignupRequest req) {
+        return calculateBmi(req.getHeight(), req.getWeight());
     }
 
-    public double calculateTdeeAdjusted(double bmr, SignupRequest signupRequest) {
-        double caloricAdjustment = UserProfile.CaloricAdjustment.valueOf(signupRequest.getCaloricAdjustment()).getValue();
-        double baseTdee = calculateTdee(bmr, signupRequest);
-        return baseTdee + (baseTdee * caloricAdjustment);
+    public double calculateBmi(double height, double weight) {
+        return weight / Math.pow(height / 100, 2);
     }
 
-    public SuggestedGoal suggestedGoal(SignupRequest signupRequest) {
+    public double calculateTdee(double bmr, String activityLevel) {
+        return bmr * getActivityLevel(activityLevel);
+    }
 
-        double bmiMin = UserProfile.BmiBalance.MAINTAIN.getMinBmi();
-        double bmiMax = UserProfile.BmiBalance.MAINTAIN.getMaxBmi();
-        double bmi = calculateBmi(signupRequest);
+    public double calculateTdeeAdjusted(double bmr, SignupRequest req) {
+        double baseTdee = calculateTdee(bmr, req.getActivityLevel());
+        double adjustment = getCaloricAdjustment(req.getCaloricAdjustment());
+        return baseTdee + (baseTdee * adjustment);
+    }
 
+    public SuggestedGoal suggestedGoal(double height, double weight) {
+        double bmi = calculateBmi(height, weight);
         SuggestedGoal suggestedGoal = new SuggestedGoal();
 
         for (UserProfile.BmiBalance bmiBalance : UserProfile.BmiBalance.values()) {
@@ -57,41 +91,24 @@ public class UserProfileService {
             }
         }
 
-        double height = signupRequest.getHeight() / 100;
-        suggestedGoal.setMinWeight(bmiMin * height * height);
-        suggestedGoal.setMaxWeight(bmiMax * height * height);
+        double heightM = height / 100;
+        suggestedGoal.setMinWeight(UserProfile.BmiBalance.MAINTAIN.getMinBmi() * heightM * heightM);
+        suggestedGoal.setMaxWeight(UserProfile.BmiBalance.MAINTAIN.getMaxBmi() * heightM * heightM);
 
         return suggestedGoal;
     }
 
-    public UserProfile saveUserProfile(UserCredential userCredential, SignupRequest signupRequest) {
-        try {
-            double bmr = calculateBmr(signupRequest);
-
-            UserProfile userProfile = UserProfile.builder()
-                    .userCredential(userCredential)
-                    .userName(signupRequest.getName())
-                    .userLastname(signupRequest.getLastName())
-                    .age(signupRequest.getAge())
-                    .gender(UserProfile.Gender.valueOf(signupRequest.getGender()).getCode())
-                    .height(signupRequest.getHeight())
-                    .weight(signupRequest.getWeight())
-                    .weightGoal(signupRequest.getWeightGoal())
-                    .activityLevel(UserProfile.ActivityLevel.valueOf(signupRequest.getActivityLevel()).getValue())
-                    .bmr(bmr)
-                    .bmi(calculateBmi(signupRequest))
-                    .tdee(calculateTdeeAdjusted(bmr, signupRequest))
-                    .caloricAdjustment(UserProfile.CaloricAdjustment.valueOf(signupRequest.getCaloricAdjustment()).getValue())
-                    .build();
-
-            userProfileRepository.save(userProfile);
-
-            return userProfile;
-
-        } catch (Exception e) {
-            throw new ValidationException(e.getMessage());
-        }
+    // === ENUM HELPERS ===
+    private int getGenderCode(String gender) {
+        return UserProfile.Gender.valueOf(gender).getValue();
     }
 
+    private double getActivityLevel(String level) {
+        return UserProfile.ActivityLevel.valueOf(level).getValue();
+    }
 
+    private double getCaloricAdjustment(String adjustment) {
+        return UserProfile.CaloricAdjustment.valueOf(adjustment).getValue();
+    }
 }
+

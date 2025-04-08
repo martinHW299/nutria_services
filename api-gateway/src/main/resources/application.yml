@@ -6,9 +6,7 @@ spring:
     name: api-gateway
 
   cloud:
-
     gateway:
-
       routes:
         - id: authentication-service
           uri: lb://authentication-service
@@ -16,10 +14,6 @@ spring:
             - Path=/api/v1/auth/**
           filters:
             - name: AuthFilter
-            - name: CircuitBreaker
-              args:
-                name: circuitBreaker
-                fallbackUri: forward:/fallbackCall
 
         - id: image-processing-service
           uri: lb://image-processing-service
@@ -34,10 +28,7 @@ spring:
             - Path=/api/v1/nutrition-trace/**
           filters:
             - name: AuthFilter
-            - name: CircuitBreaker
-              args:
-                name: circuitBreaker
-                fallbackUri: forward:/fallbackCall
+
   main:
     web-application-type: reactive
 
@@ -61,16 +52,6 @@ application:
   security:
     jwt:
       secret-key: ${KEY}
-
-resilience4j:
-  circuitbreaker:
-    instances:
-      circuitBreaker:
-        registerHealthIndicator: true
-        failureRateThreshold: 50  # The threshold at which the circuit breaker will open (50% failure)
-        slidingWindowSize: 10     # Number of requests to consider for failure rate calculation
-        permittedNumberOfCallsInHalfOpenState: 5  # Number of requests allowed in half-open state
-        waitDurationInOpenState: 5000ms
 
 logging:
   level:

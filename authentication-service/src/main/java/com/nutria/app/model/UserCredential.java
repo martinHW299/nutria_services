@@ -20,13 +20,9 @@ public class UserCredential {
     private Long id;
 
     private String email;
-
     private String password;
-
     private String name;
-
     private String lastName;
-
     private String status;
 
     @CreationTimestamp

@@ -37,27 +37,11 @@ public class TokenService {
     }
 
     public void revokeToken(String token) {
-        token = token.substring(7).trim();
         tokenRepository.findByToken(token)
                 .ifPresent(t -> {
                     t.setRevoked(true);
                     tokenRepository.save(t);
                 });
-    }
-
-    public void revokeAllUserTokens(UserCredential userCredential) {
-        List<Token> validTokens = tokenRepository.findAllValidTokensByUser(userCredential.getId());
-
-        if (validTokens.isEmpty()) {
-            return;
-        }
-
-        validTokens.forEach(t -> {
-            t.setRevoked(true);
-            // You could also set expired=true if needed
-        });
-
-        tokenRepository.saveAll(validTokens);
     }
 
 }

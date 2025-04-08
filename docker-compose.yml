@@ -57,7 +57,7 @@ services:
       - microservices-network
 
   # Authentication Service
-  auth-service:
+  authentication-service:
     build:
       context: ./authentication-service
       dockerfile: Dockerfile
@@ -85,7 +85,7 @@ services:
     ports:
       - "8083:8083"
     volumes:
-      - food-images:/app/food-images
+      - ./food-images:/app/food-images
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
@@ -98,6 +98,25 @@ services:
       eureka-service:
         condition: service_healthy
       mongo:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
+  trace-nutrition-service:
+    build:
+      context: ./trace-nutrition-service
+      dockerfile: Dockerfile
+    container_name: nutrition-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/trace_nutrition_data
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      eureka-service:
         condition: service_healthy
     networks:
       - microservices-network

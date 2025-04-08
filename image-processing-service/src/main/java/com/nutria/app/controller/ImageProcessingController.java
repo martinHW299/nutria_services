@@ -24,7 +24,6 @@ public class ImageProcessingController {
 
     private final IngestionTraceService ingestionTraceService;
 
-    @Async
     @PostMapping("/save")
     public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) throws IOException {
         return CompletableFuture.completedFuture(ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, payload.get("image")))));

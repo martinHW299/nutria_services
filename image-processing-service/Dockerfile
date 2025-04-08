@@ -10,6 +10,9 @@ COPY target/*.jar app.jar
 RUN addgroup --system spring && \
     adduser --system --ingroup spring spring && \
     chown spring:spring /app
+
+RUN mkdir -p /app/food-images && chmod -R 777 /app/food-images
+
 USER spring:spring
 
 EXPOSE 8082

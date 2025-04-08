@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SuggestedGoal {
 
-    private double minWeight;
-    private double maxWeight;
+    private Double minWeight;
+    private Double maxWeight;
     private String suggestedGoal;
 
 }
