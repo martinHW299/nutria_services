@@ -21,7 +21,6 @@ public class IngestionTrace {
     private Long id;
 
     private Long userId;
-
     private String macrosDataId;
 
     @OneToOne(cascade = CascadeType.ALL)

@@ -2,19 +2,18 @@ package com.nutria.app.service;
 
 
 import com.nutria.app.dto.IngestionTraceDTO;
+import com.nutria.app.dto.MacrosDataRequest;
 import com.nutria.app.model.FoodImage;
 import com.nutria.app.model.IngestionTrace;
 import com.nutria.app.model.MacrosData;
 import com.nutria.app.repository.IngestionTraceRepository;
 import com.nutria.common.exceptions.ResourceNotFoundException;
 import com.nutria.common.exceptions.ValidationException;
-import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -27,11 +26,12 @@ public class IngestionTraceService {
     private final FoodImageService foodImageService;
     private final IngestionTraceRepository ingestionTraceRepository;
 
-    public IngestionTrace save(String token, String imagesBase64) {
+    public IngestionTrace save(String token, String image, MacrosData macrosData) {
 
         Long userId = jwtService.extractId(token);
-        MacrosData macrosData = macrosDataService.saveMacros(userId, imagesBase64);
-        FoodImage foodImage = foodImageService.saveFoodImage(userId, imagesBase64);
+        FoodImage foodImage = foodImageService.saveFoodImage(userId, image);
+
+        macrosDataService.saveMacros(token, macrosData);
 
         IngestionTrace ingestionTrace = IngestionTrace.builder()
                 .userId(userId)
@@ -41,6 +41,7 @@ public class IngestionTraceService {
                 .build();
 
         return ingestionTraceRepository.save(ingestionTrace);
+
     }
 
     public List<IngestionTraceDTO> getIngestionTraceByPeriod(String token, Date dateInit, Date dateEnd) {

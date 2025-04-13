@@ -12,9 +12,6 @@ import java.util.Optional;
 
 public interface TokenRepository extends JpaRepository<Token, Long> {
 
-    // Find all valid tokens for a user
-    @Query("select t from Token t where t.userCredential.id = :userId and t.revoked = false and t.expired = false")
-    List<Token> findAllValidTokensByUser(@Param("userId") Long userId);
-
     Optional<Token> findByToken(String token);
+
 }

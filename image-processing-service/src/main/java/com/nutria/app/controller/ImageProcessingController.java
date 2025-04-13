@@ -2,11 +2,17 @@ package com.nutria.app.controller;
 
 
 import com.nutria.app.dto.IngestionTraceDTO;
+import com.nutria.app.dto.MacrosDataRequest;
+import com.nutria.app.model.FoodImage;
 import com.nutria.app.model.IngestionTrace;
+import com.nutria.app.model.MacrosData;
+import com.nutria.app.service.FoodImageService;
 import com.nutria.app.service.IngestionTraceService;
+import com.nutria.app.service.MacrosDataService;
 import com.nutria.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +29,18 @@ import java.util.concurrent.CompletableFuture;
 public class ImageProcessingController {
 
     private final IngestionTraceService ingestionTraceService;
+    private final MacrosDataService macrosDataService;
 
     @PostMapping("/save")
-    public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) throws IOException {
-        return CompletableFuture.completedFuture(ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, payload.get("image")))));
+    public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(@RequestHeader("Authorization") String token, @RequestBody MacrosDataRequest macrosDataRequest) {
+        String image = macrosDataRequest.getImage();
+        MacrosData macrosData = macrosDataRequest.getMacrosData();
+        return CompletableFuture.completedFuture(ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, image, macrosData))));
+    }
+
+    @PostMapping("/processImage")
+    public ResponseEntity<ApiResponse<MacrosData>> processImage(@RequestParam("id") int i, @RequestBody Map<String, String> payload) {
+        return ResponseEntity.ok(ApiResponse.success(macrosDataService.getMacrosFromImage(payload.get("image"), i)));
     }
 
     @PostMapping("/delete")

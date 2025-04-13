@@ -28,7 +28,6 @@ public class UserProfileService {
             double bmr = calculateBmr(signupRequest);
             double bmi = calculateBmi(signupRequest);
             double tdee = calculateTdeeAdjusted(bmr, signupRequest);
-            int genderCode = getGenderCode(signupRequest.getGender());
             double caloricAdjustment = getCaloricAdjustment(signupRequest.getCaloricAdjustment());
             double activityLevel = getActivityLevel(signupRequest.getActivityLevel());
 
@@ -62,25 +61,28 @@ public class UserProfileService {
         return (10 * req.getWeight()) + (6.25 * req.getHeight()) - (5 * req.getAge()) + gen;
     }
 
-    public double calculateBmi(SignupRequest req) {
+    public Double calculateBmi(SignupRequest req) {
         return calculateBmi(req.getHeight(), req.getWeight());
     }
 
-    public double calculateBmi(double height, double weight) {
+    public Double calculateBmi(double height, double weight) {
         return weight / Math.pow(height / 100, 2);
     }
 
-    public double calculateTdee(double bmr, String activityLevel) {
+    public Double calculateTdee(double bmr, String activityLevel) {
         return bmr * getActivityLevel(activityLevel);
     }
 
-    public double calculateTdeeAdjusted(double bmr, SignupRequest req) {
+    public Double calculateTdeeAdjusted(double bmr, SignupRequest req) {
         double baseTdee = calculateTdee(bmr, req.getActivityLevel());
         double adjustment = getCaloricAdjustment(req.getCaloricAdjustment());
         return baseTdee + (baseTdee * adjustment);
     }
 
     public SuggestedGoal suggestedGoal(double height, double weight) {
+
+        inputValidator.validateAdvisorInput(height, weight);
+
         double bmi = calculateBmi(height, weight);
         SuggestedGoal suggestedGoal = new SuggestedGoal();
 
@@ -99,15 +101,15 @@ public class UserProfileService {
     }
 
     // === ENUM HELPERS ===
-    private int getGenderCode(String gender) {
+    private Integer getGenderCode(String gender) {
         return UserProfile.Gender.valueOf(gender).getValue();
     }
 
-    private double getActivityLevel(String level) {
+    private Double getActivityLevel(String level) {
         return UserProfile.ActivityLevel.valueOf(level).getValue();
     }
 
-    private double getCaloricAdjustment(String adjustment) {
+    private Double getCaloricAdjustment(String adjustment) {
         return UserProfile.CaloricAdjustment.valueOf(adjustment).getValue();
     }
 }

@@ -18,6 +18,10 @@ public class TokenService {
 
     private final TokenRepository tokenRepository;
 
+    public String cleanToken(String token) {
+        return token.replace("Bearer ", "").trim();
+    }
+
     public void saveToken(String tokenValue, UserCredential userCredential) {
         Token token = Token.builder()
                 .token(tokenValue)
@@ -31,13 +35,13 @@ public class TokenService {
     }
 
     public boolean isTokenValid(String token) {
-        return tokenRepository.findByToken(token)
-                .map(t -> !t.isRevoked() && !t.isExpired())
+        return tokenRepository.findByToken(cleanToken(token))
+                .map(t -> !t.isRevoked() || !t.isExpired())
                 .orElse(false);
     }
 
     public void revokeToken(String token) {
-        tokenRepository.findByToken(token)
+        tokenRepository.findByToken(cleanToken(token))
                 .ifPresent(t -> {
                     t.setRevoked(true);
                     tokenRepository.save(t);

@@ -10,7 +10,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -26,7 +25,6 @@ public class NutritionTraceController {
     public ResponseEntity<ApiResponse<DailyIntakeGoal>> saveDailyGoal(@RequestHeader("Authorization") String token){
         return ResponseEntity.ok(ApiResponse.success(dailyIntakeGoalService.saveDailyIntakeGoal(token)));
     }
-
 
     @GetMapping("/get-periodic-intake")
     public ResponseEntity<List<MacrosData>> getPeriodicIntake(
@@ -45,7 +43,6 @@ public class NutritionTraceController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(progressTraceService.savePeriodicProgressTrace(token, initDate, endDate)));
     }
-
 
 
 

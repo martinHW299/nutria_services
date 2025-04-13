@@ -7,6 +7,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -72,9 +73,9 @@ public class AiService {
                 "In case the image does not contain any food item, then return a null response";
 
         return Map.of(
-                "contents", new Object[] {
+                "contents", new Object[]{
                         Map.of(
-                                "parts", new Object[] {
+                                "parts", new Object[]{
                                         Map.of("text", prompt),
                                         Map.of(
                                                 "inline_data", Map.of(

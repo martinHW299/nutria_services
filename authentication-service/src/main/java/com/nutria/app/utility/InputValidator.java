@@ -5,6 +5,9 @@ import com.nutria.app.dto.SignupRequest;
 import com.nutria.app.model.UserProfile;
 import org.springframework.stereotype.Component;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @Component
 public class InputValidator {
 
@@ -46,6 +49,12 @@ public class InputValidator {
         validateEnum(signupRequest.getCaloricAdjustment(), UserProfile.CaloricAdjustment.class, "caloric adjustment");
     }
 
+    public void validateAdvisorInput(Double height, Double weight) {
+        if ( height == null || weight == null || height <= 0|| weight <= 0) {
+            throw new IllegalArgumentException("Height / Weight values not found.");
+        }
+    }
+
     private boolean isBlank(String str) {
         return str == null || str.trim().isEmpty();
     }
@@ -55,6 +64,57 @@ public class InputValidator {
             Enum.valueOf(enumClass, value);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid " + fieldName + " value: " + value);
+        }
+    }
+
+    public void emailInputValidator(String email) {
+        String EMAIL_PATTERN = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+        Pattern pattern = Pattern.compile(EMAIL_PATTERN);
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+
+        Matcher matcher = pattern.matcher(email);
+        if (!matcher.matches()){
+            throw new IllegalArgumentException("Invalid password. Try with another mail address");
+        }
+    }
+
+    public void passwordInputValidator(String password) {
+        int MIN_LENGTH = 8;
+        int MAX_LENGTH = 128;
+
+        if (password == null) {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
+
+        if (password.length() < MIN_LENGTH ) {
+            throw new IllegalArgumentException("Password is too short");
+        }
+
+        if (password.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException("Password is too long");
+        }
+
+        // Check for at least one uppercase letter
+        if (!password.matches(".*[A-Z].*")) {
+            throw new IllegalArgumentException("Password must contain at least one uppercase letter");
+        }
+
+        // Check for at least one lowercase letter
+        if (!password.matches(".*[a-z].*")) {
+            throw new IllegalArgumentException("Password must contain at least one lowercase letter");
+        }
+
+        // Check for at least one digit
+        if (!password.matches(".*\\d.*")) {
+            throw new IllegalArgumentException("Password must contain at least one digit");
+        }
+
+        // Check for at least one special character
+        if (!password.matches(".*[!@#$%^&*()\\-_=+\\\\|\\[{\\]};:'\",<.>/?].*")) {
+            throw new IllegalArgumentException("Password must contain at least one special character");
         }
     }
 }

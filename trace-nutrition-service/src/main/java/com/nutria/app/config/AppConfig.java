@@ -16,5 +16,4 @@ public class AppConfig {
         return WebClient.builder();
     }
 
-
 }

@@ -56,7 +56,7 @@
     </dependencies>
 
     <build>
-        <finalName>image-processing-service</finalName>
+        <finalName>trace-nutrition-service</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

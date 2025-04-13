@@ -34,12 +34,12 @@ public class JwtUtil {
             return Mono.just(false);
         }
 
-        Map<String, String> body = Map.of("token", token);
+        //Map<String, String> body = Map.of("token", token);
 
         return webClientBuilder.build()
                 .post()
                 .uri("http://authentication-service/api/v1/auth/validate")
-                .bodyValue(body)
+                .header("Authorization", "Bearer " + token)
                 .retrieve()
                 .bodyToMono(Boolean.class)
                 .onErrorReturn(false); // fallback if call fails

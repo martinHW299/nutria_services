@@ -39,13 +39,13 @@ public class UserController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
-        tokenService.revokeToken(token.substring(7).trim());
+        userService.setInactiveUser(token.substring(7).trim());
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<Boolean> validateToken(@RequestBody Map<String, String> payload) {
-        boolean isValid = tokenService.isTokenValid(payload.get("token"));
+    public ResponseEntity<Boolean> validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        boolean isValid = tokenService.isTokenValid(token);
         return ResponseEntity.ok(isValid);
     }
 
@@ -55,7 +55,7 @@ public class UserController {
     }
 
     @GetMapping("/advisor")
-    public SuggestedGoal suggestedGoal(@RequestBody Map<Double, Double> payload) {
+    public SuggestedGoal suggestedGoal(@RequestBody Map<String, Double> payload) {
         return userProfileService.suggestedGoal(payload.get("height"), payload.get("weight"));
     }
 

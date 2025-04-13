@@ -31,24 +31,20 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
             }
 
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (!authHeader.startsWith("Bearer ")) {
                 return Mono.error(new ValidationException("Missing or invalid Authorization header"));
             }
 
             String token = authHeader.substring(7).trim();
-            log.info("auth header: {}", authHeader);
-            log.info("token: {}", token);
 
             return jwtUtil.validateToken(token)
                     .flatMap(isValid -> {
-                        log.info("token validation: {}", isValid);
                         if (!isValid) {
                             return Mono.error(new ValidationException("Unauthorized access to application, token not valid"));
                         }
                         return chain.filter(exchange);
                     })
                     .onErrorResume(e -> {
-                        log.error("Token validation error: {}", e.getMessage());
                         return Mono.error(new ValidationException("Unauthorized access to application"));
                     });
         };

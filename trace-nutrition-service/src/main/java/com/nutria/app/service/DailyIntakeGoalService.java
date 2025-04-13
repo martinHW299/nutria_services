@@ -2,16 +2,10 @@ package com.nutria.app.service;
 
 
 import com.nutria.app.model.DailyIntakeGoal;
-import com.nutria.app.repository.DailyIntakeGoalRepository;
+import com.nutria.app.repository.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DailyIntakeGoalService {
@@ -22,13 +16,14 @@ public class DailyIntakeGoalService {
     private double getProteinIntakeGoal(double tdee) {
         return (tdee * 0.2)/4; //g
     }
+
     private double getCarbsIntakeGoal(double tdee) {
         return (tdee * 0.55)/4; //g
     }
+
     private double getFatsIntakeGoal(double tdee) {
         return (tdee * 0.25)/9; //g
     }
-
 
     public DailyIntakeGoal saveDailyIntakeGoal(String token) {
         Long userId = jwtService.extractId(token);

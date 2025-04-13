@@ -2,6 +2,7 @@ package com.nutria.app.model;
 
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
@@ -17,11 +18,11 @@ public class MacrosData {
     private String id;
     private Long userId;
     private String description;
-    private double calories;
-    private double proteins;
-    private double carbs;
-    private double fats;
-    private double servingSize;
+    private Double calories;
+    private Double proteins;
+    private Double carbs;
+    private Double fats;
+    private Double servingSize;
     private String status;
 
     @CreatedDate

@@ -24,27 +24,16 @@ public class UserProfile {
     private UserCredential userCredential;
 
     private String userName;
-
     private String userLastname;
-
     private Integer age;
-
     private String gender;
-
     private Double height;
-
     private Double weight;
-
     private Double weightGoal;
-
     private Double activityLevel;
-
     private Double bmr;
-
     private Double bmi;
-
     private Double tdee;
-
     private Double caloricAdjustment;
 
     @CreationTimestamp

@@ -31,7 +31,6 @@ public class FoodImage {
     private String id;
 
     private Long userId;
-
     private String fileName;
     private String filePath;
 

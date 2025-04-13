@@ -23,13 +23,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FoodImageService {
 
+    //@Value("${image.path.upload}")
     @Value("${FOOD_IMAGES_DIR:/app/food-images}")
     private String FOLDER_PATH;
 
     private final FoodImageRepository foodImageRepository;
 
     @PostConstruct
-    public void init() {
+    public void initFile() {
         try {
             Path path = Paths.get(FOLDER_PATH);
             if (!Files.exists(path)) {
@@ -43,6 +44,7 @@ public class FoodImageService {
 
     public FoodImage saveFoodImage(Long userId, String imageBase64) {
         try {
+
             log.info("Saving food image for user ID: {}", userId);
 
             Path uploadPath = Paths.get(FOLDER_PATH);
