@@ -26,7 +26,7 @@ public class IngestionTraceService {
     private final FoodImageService foodImageService;
     private final IngestionTraceRepository ingestionTraceRepository;
 
-    public IngestionTrace save(String token, String image, MacrosData macrosData) {
+    public IngestionTrace save(String token, Date date, String image, MacrosData macrosData) {
 
         Long userId = jwtService.extractId(token);
         FoodImage foodImage = foodImageService.saveFoodImage(userId, image);
@@ -38,6 +38,7 @@ public class IngestionTraceService {
                 .macrosDataId(macrosData.getId())
                 .foodImage(foodImage)
                 .status(IngestionTrace.DataStatus.ACTIVE.getCode())
+                .recordAt(date)
                 .build();
 
         return ingestionTraceRepository.save(ingestionTrace);
@@ -62,6 +63,7 @@ public class IngestionTraceService {
                                 macrosData,
                                 ingestionTrace.getFoodImage(),
                                 ingestionTrace.getStatus(),
+                                ingestionTrace.getRecordAt(),
                                 ingestionTrace.getCreatedAt(),
                                 ingestionTrace.getUpdatedAt()
                         );

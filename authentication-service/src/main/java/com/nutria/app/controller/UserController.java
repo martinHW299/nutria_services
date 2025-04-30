@@ -55,10 +55,13 @@ public class UserController {
     }
 
     @GetMapping("/advisor")
-    public SuggestedGoal suggestedGoal(@RequestBody Map<String, Double> payload) {
-        return userProfileService.suggestedGoal(payload.get("height"), payload.get("weight"));
+    public ResponseEntity<ApiResponse<SuggestedGoal>> suggestedGoal(@RequestBody Map<String, Double> payload) {
+        return ResponseEntity.ok(ApiResponse.success(userProfileService.suggestedGoal(payload.get("height"), payload.get("weight"))));
     }
 
-
+    @GetMapping("/get-profile")
+    public ResponseEntity<ApiResponse<UserProfile>> getUserProfile(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return ResponseEntity.ok(ApiResponse.success(userProfileService.getUserProfile(token)));
+    }
 
 }

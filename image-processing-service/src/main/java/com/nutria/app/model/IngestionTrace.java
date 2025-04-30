@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Data
@@ -18,16 +19,17 @@ public class IngestionTrace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
-    private Long userId;
+    private long userId;
     private String macrosDataId;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(referencedColumnName = "id")
+    @JoinColumn(name = "image_id", referencedColumnName = "id")
     private FoodImage foodImage;
 
     private String status;
+    private Date recordAt;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

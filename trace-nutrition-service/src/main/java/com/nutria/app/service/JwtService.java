@@ -25,6 +25,10 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("tdee", Double.class));
     }
 
+    public Double extractWeight(String token) {
+        return extractClaim(token, claims -> claims.get("weight", Double.class));
+    }
+
     public Double extractWeightGoal(String token) {
         return extractClaim(token, claims -> claims.get("weightGoal", Double.class));
     }

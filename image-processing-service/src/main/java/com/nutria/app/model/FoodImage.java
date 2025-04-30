@@ -30,7 +30,7 @@ public class FoodImage {
     @Id
     private String id;
 
-    private Long userId;
+    private long userId;
     private String fileName;
     private String filePath;
 

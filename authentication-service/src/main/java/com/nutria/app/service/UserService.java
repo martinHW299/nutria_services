@@ -18,6 +18,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import static com.nutria.app.utility.InputValidator.emailInputValidator;
+import static com.nutria.app.utility.InputValidator.passwordInputValidator;
+
 
 @Service
 @RequiredArgsConstructor
@@ -30,14 +33,13 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final UserProfileService userProfileService;
     private final TokenService tokenService;
-    private final InputValidator inputValidator;
 
     public UserProfile signup(SignupRequest signupRequest) {
 
         validateSignupEmail(signupRequest.getEmail());
 
-        inputValidator.emailInputValidator(signupRequest.getEmail());
-        inputValidator.passwordInputValidator(signupRequest.getPassword());
+        emailInputValidator(signupRequest.getEmail());
+        passwordInputValidator(signupRequest.getPassword());
 
         UserCredential userCredential = createUserCredential(signupRequest);
         userCredentialRepository.save(userCredential);
@@ -56,8 +58,8 @@ public class UserService {
 
     public String login(LoginRequest loginRequest) {
 
-        inputValidator.emailInputValidator(loginRequest.getEmail());
-        inputValidator.passwordInputValidator(loginRequest.getPassword());
+        emailInputValidator(loginRequest.getEmail());
+        passwordInputValidator(loginRequest.getPassword());
 
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
@@ -79,7 +81,7 @@ public class UserService {
     }
 
     public String updatePassword(String token, ChangePasswordRequest request) {
-        inputValidator.passwordInputValidator(request.getNewPassword());
+        passwordInputValidator(request.getNewPassword());
 
         String email = jwtService.extractEmail(token);
         UserCredential userCredential = userCredentialRepository.findByEmail(email).orElseThrow(() -> new AuthenticationServiceException("User not found."));

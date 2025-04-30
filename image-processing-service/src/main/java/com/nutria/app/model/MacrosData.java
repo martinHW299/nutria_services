@@ -16,13 +16,13 @@ public class MacrosData {
 
     @Id
     private String id;
-    private Long userId;
+    private long userId;
     private String description;
-    private Double calories;
-    private Double proteins;
-    private Double carbs;
-    private Double fats;
-    private Double servingSize;
+    private double calories;
+    private double proteins;
+    private double carbs;
+    private double fats;
+    private double servingSize;
     private String status;
 
     @CreatedDate

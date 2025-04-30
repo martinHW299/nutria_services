@@ -28,6 +28,7 @@ public class JwtService {
     public String generateToken(UserCredential userCredential, UserProfile userProfile) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", userCredential.getId());
+        claims.put("weight", userProfile.getWeight());
         claims.put("weightGoal", userProfile.getWeightGoal());
         //claims.put("activityLevel", userProfile.getActivityLevel());
         claims.put("bmr", userProfile.getBmr());

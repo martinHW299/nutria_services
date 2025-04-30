@@ -23,9 +23,9 @@ public class ProgressTrace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
-    private Long userId;
+    private long userId;
     private Date dateInit;
     private Date dateEnt;
     private double caloriesConsumed;

@@ -1,8 +1,9 @@
 package com.nutria.app.service;
 
 import com.nutria.app.dto.MacrosData;
-import com.nutria.app.model.*;
+import com.nutria.app.dto.MacrosSummary;
 import com.nutria.app.repository.*;
+import com.nutria.app.utilities.DateUtils;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -27,6 +29,7 @@ public class ProgressTraceService {
     private final WebClient.Builder webClientBuilder;
     private final WeightTraceService weightTraceService;
     private final ProgressTraceRepository progressTraceRepository;
+    private final DateUtils dateUtils;
 
     public List<MacrosData> fetchMacrosData(String token, Date initDate, Date endDate) {
         if (initDate.after(endDate)) {
@@ -97,46 +100,117 @@ public class ProgressTraceService {
     }
 
 
-    public ProgressTrace savePeriodicProgressTrace(String token, Date initDate, Date endDate) {
-
-        List<MacrosData> macrosDataList = fetchMacrosData(token, initDate, endDate);
-        Long userId = jwtService.extractId(token);
-
-        double consumedCalories = 0.0;
-        double consumedProteins = 0.0;
-        double consumedCarbs = 0.0;
-        double consumedFats = 0.0;
-
-        for (MacrosData macrosData : macrosDataList) {
-            consumedCalories += macrosData.getCalories();
-            consumedProteins += macrosData.getProteins();
-            consumedCarbs += macrosData.getCarbs();
-            consumedFats += macrosData.getFats();
-        }
-
-        LocalDate initLocalDate = initDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate endtLocalDate = endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        long daysDifference = ChronoUnit.DAYS.between(initLocalDate, endtLocalDate);
-
-        WeightTrace weightTrace = weightTraceService.saveWeightTrace(token, daysDifference, consumedCalories);
-        log.info("weightTrace: {}", weightTrace);
-
-        ProgressTrace progressTrace = ProgressTrace.builder()
-                .userId(userId)
-                .dateInit(initDate)
-                .dateEnt(endDate)
-                .caloriesConsumed(consumedCalories)
-                .proteinsConsumed(consumedProteins)
-                .carbsConsumed(consumedCarbs)
-                .fatsConsumed(consumedFats)
-                .weightTrace(weightTrace)
-                .build();
-
-        log.info("progressTrace: {}", progressTrace);
-
-        return progressTraceRepository.save(progressTrace);
-
+    public MacrosSummary fetchDailyMacrosData(String token, Date date) {
+        List<MacrosData> macros = fetchMacrosData(token, date, date);
+        return calculateSummary(token, date.toString(), macros, date, date);
     }
 
 
+    public List<MacrosSummary> fetchWeeklyMacrosData(String token, Date initDate) {
+        if (initDate == null) {
+            throw new RuntimeException("Date not found");
+        }
+
+        Date firstDayWeek = dateUtils.getFirstDayOfWeek(initDate);
+        List<MacrosSummary> dailySummaries = new ArrayList<>();
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(firstDayWeek);
+
+        String[] dayFlags = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"};
+
+        for (int i = 0; i < 7; i++) {
+            Date day = calendar.getTime();
+
+            // You might want to fetch data only for that single day
+            List<MacrosData> dayData = fetchMacrosData(token, day, day);
+
+            String flag = dayFlags[i];
+            MacrosSummary summary = calculateSummary(token, flag, dayData, day, day);
+            dailySummaries.add(summary);
+
+            calendar.add(Calendar.DATE, 1); // move to next day
+        }
+
+        return dailySummaries;
+    }
+
+    public List<MacrosSummary> fetchMonthlyMacrosData(String token, Date inputDate) {
+
+        List<MacrosSummary> weeklySummaries = new ArrayList<>();
+
+        if (inputDate == null) {
+            throw new RuntimeException("Date not found");
+        }
+
+        Date firstDayMonth = dateUtils.getFirstDayOfMonth(inputDate);
+        Date lastDayMonth = dateUtils.getLastDayOfMonth(inputDate);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(firstDayMonth);
+        int i = 1;
+
+
+        while (!calendar.getTime().after(lastDayMonth)) {
+            Date firstDayWeek = dateUtils.getFirstDayOfWeek(calendar.getTime());
+            Date lastDayWeek = dateUtils.getLastDayOfWeek(calendar.getTime());
+
+            if (firstDayWeek.before(firstDayMonth)) {
+                firstDayWeek = firstDayMonth;
+            }
+            if (lastDayWeek.after(lastDayMonth)) {
+                lastDayWeek = lastDayMonth;
+            }
+
+            List<MacrosData> weekData = fetchMacrosData(token, firstDayWeek, lastDayWeek);
+            MacrosSummary summary = calculateSummary(token, "week "+ i, weekData, firstDayWeek, lastDayWeek);
+            weeklySummaries.add(summary);
+
+            calendar.setTime(lastDayWeek);
+            calendar.add(Calendar.DATE, 1);
+            i++;
+        }
+
+        return weeklySummaries;
+    }
+
+    private MacrosSummary calculateSummary(String token, String flag, List<MacrosData> macrosDataList, Date firstDayWeek, Date lastDayWeek) {
+
+        LocalDate startDate = Instant.ofEpochMilli(firstDayWeek.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = Instant.ofEpochMilli(lastDayWeek.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+        long daysDifference = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+
+        log.info("daysDifference: {}", daysDifference);
+
+        double totalCalories = 0;
+        double totalProteins = 0;
+        double totalCarbs = 0;
+        double totalFats = 0;
+        double weightTrace = 0;
+        boolean gotRecords = true;
+
+        if (macrosDataList.isEmpty()) {
+            gotRecords = false;
+        } else {
+            for (MacrosData data : macrosDataList) {
+                totalCalories += data.getCalories();
+                totalProteins += data.getProteins();
+                totalCarbs += data.getCarbs();
+                totalFats += data.getFats();
+            }
+            weightTrace = weightTraceService.weightChangeByIntake(token, daysDifference, totalCalories);
+        }
+
+        return MacrosSummary.builder()
+                .tag(flag)
+                .totalCalories(totalCalories)
+                .totalProteins(totalProteins)
+                .totalCarbs(totalCarbs)
+                .totalFats(totalFats)
+                .weightStatus(weightTrace)
+                .gotRecords(gotRecords)
+                .dateInit(firstDayWeek)
+                .dateEnd(lastDayWeek)
+                .build();
+    }
 }

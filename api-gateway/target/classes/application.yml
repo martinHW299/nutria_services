@@ -47,13 +47,7 @@ eureka:
     registry-fetch-interval-seconds: 5
     cache-refresh-executor-thread-pool-size: 2
 
-
 application:
   security:
     jwt:
       secret-key: ${KEY}
-
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    io.github.resilience4j.circuitbreaker: DEBUG

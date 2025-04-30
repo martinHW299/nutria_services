@@ -20,9 +20,9 @@ public class WeightTrace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
-    private Long userId;
+    private long userId;
     private double traceWeight;
 
     @CreationTimestamp

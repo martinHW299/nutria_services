@@ -25,16 +25,16 @@ public class UserProfile {
 
     private String userName;
     private String userLastname;
-    private Integer age;
+    private int age;
     private String gender;
-    private Double height;
-    private Double weight;
-    private Double weightGoal;
-    private Double activityLevel;
-    private Double bmr;
-    private Double bmi;
-    private Double tdee;
-    private Double caloricAdjustment;
+    private double height;
+    private double weight;
+    private double weightGoal;
+    private double activityLevel;
+    private double bmr;
+    private double bmi;
+    private double tdee;
+    private double caloricAdjustment;
 
     @CreationTimestamp
     @Column(updatable = false)

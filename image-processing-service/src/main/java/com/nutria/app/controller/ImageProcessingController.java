@@ -6,6 +6,7 @@ import com.nutria.app.dto.MacrosDataRequest;
 import com.nutria.app.model.FoodImage;
 import com.nutria.app.model.IngestionTrace;
 import com.nutria.app.model.MacrosData;
+import com.nutria.app.service.AiService;
 import com.nutria.app.service.FoodImageService;
 import com.nutria.app.service.IngestionTraceService;
 import com.nutria.app.service.MacrosDataService;
@@ -30,17 +31,21 @@ public class ImageProcessingController {
 
     private final IngestionTraceService ingestionTraceService;
     private final MacrosDataService macrosDataService;
+    private final AiService aiService;
 
     @PostMapping("/save")
-    public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(@RequestHeader("Authorization") String token, @RequestBody MacrosDataRequest macrosDataRequest) {
+    public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
+            @RequestBody MacrosDataRequest macrosDataRequest) {
         String image = macrosDataRequest.getImage();
         MacrosData macrosData = macrosDataRequest.getMacrosData();
-        return CompletableFuture.completedFuture(ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, image, macrosData))));
+        return CompletableFuture.completedFuture(ResponseEntity.ok(ApiResponse.success(ingestionTraceService.save(token, date, image, macrosData))));
     }
 
-    @PostMapping("/processImage")
-    public ResponseEntity<ApiResponse<MacrosData>> processImage(@RequestParam("id") int i, @RequestBody Map<String, String> payload) {
-        return ResponseEntity.ok(ApiResponse.success(macrosDataService.getMacrosFromImage(payload.get("image"), i)));
+    @PostMapping("/process-image")
+    public ResponseEntity<ApiResponse<MacrosData>> processImage(@RequestParam("id") int i, @RequestParam("tmp") double temperature, @RequestBody Map<String, String> payload) {
+        return ResponseEntity.ok(ApiResponse.success(macrosDataService.getMacrosFromImage(payload.get("image"), i, temperature)));
     }
 
     @PostMapping("/delete")

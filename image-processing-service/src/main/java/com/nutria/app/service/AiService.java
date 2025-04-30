@@ -27,9 +27,9 @@ public class AiService {
         this.webClient = webClientBuilder.build();
     }
 
-    public String getAnswer(String image64) {
+    public String getAnswer(String image64, double temperature) {
         // Build request payload
-        Map<String, Object> request = buildGeminiPayload(image64);
+        Map<String, Object> request = buildGeminiPayload(image64, temperature);
 
         // Make the API call
         Map<String, Object> response = webClient.post()
@@ -39,6 +39,7 @@ public class AiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
+        log.info("response: {}", response);
 
         // Extract text from response
         return extractTextFromResponse(response);
@@ -68,9 +69,41 @@ public class AiService {
         return null;
     }
 
-    private Map<String, Object> buildGeminiPayload(String image64) {
-        String prompt = "Provide a detailed analysis of all the following attributes with the corresponding unit: description, calories (Kcal), proteins (g), carbohydrates (g), fats (g), serving size (g), in JSON format." +
-                "In case the image does not contain any food item, then return a null response";
+    private Map<String, Object> buildGeminiPayload(String image64, double temperature) {
+//        String prompt = """
+//            Analyze the food item in this image and return a SINGLE JSON object (not a list) with the following fields:
+//            - "description" (name of the food),
+//            - "calories" (in Kcal),
+//            - "proteins" (in grams),
+//            - "carbohydrates" (in grams),
+//            - "fats" (in grams),
+//            - "serving_size" (in grams).
+//
+//            Example response format:
+//            {
+//              "description": "Grilled Chicken",
+//              "calories": 165,
+//              "proteins": 31,
+//              "carbohydrates": 0,
+//              "fats": 3.6,
+//              "serving_size": 100
+//            }
+//
+//            If no food is detected, return null.
+//        """;
+
+        String prompt = """
+                Analyze the food item in the provided image. Provide a SINGLE JSON object with the following nutrient information, focusing on accuracy and detail. If you are uncertain about a value, please provide a reasonable estimate rather than leaving the field blank. Use the following fields:
+                
+                - "description": The name of the food, including any specific details about the preparation or sauce.
+                - "calories": The total calories in kilocalories (kcal).
+                - "proteins": The protein content in grams (g).
+                - "carbohydrates": The carbohydrate content in grams (g).
+                - "fats": The fat content in grams (g).
+                - "serving_size": The estimated serving size in grams (g) based on the image.
+                
+                Important: Provide the response as a SINGLE JSON object, not a list or other format. If no food is detectable, return null.
+                """;
 
         return Map.of(
                 "contents", new Object[]{
@@ -79,7 +112,8 @@ public class AiService {
                                         Map.of("text", prompt),
                                         Map.of(
                                                 "inline_data", Map.of(
-                                                        "mime_type", "image/png",
+                                                        "mime_type",
+                                                        "image/png",
                                                         "data", image64
                                                 )
                                         )
@@ -87,7 +121,7 @@ public class AiService {
                         )
                 },
                 "generationConfig", Map.of(
-                        "temperature", 0.7,
+                        "temperature", temperature,
                         "response_mime_type", "application/json",
                         "maxOutputTokens", 800
                 )

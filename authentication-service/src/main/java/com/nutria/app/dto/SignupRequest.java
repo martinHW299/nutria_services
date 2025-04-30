@@ -12,11 +12,11 @@ public class SignupRequest {
     private String password;
     private String name;
     private String lastName;
-    private Integer age;
+    private int age;
     private String gender;
-    private Double height;
-    private Double weight;
-    private Double weightGoal;
+    private double height;
+    private double weight;
+    private double weightGoal;
     private String activityLevel;
     private String caloricAdjustment;
 }

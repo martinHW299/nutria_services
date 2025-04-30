@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 @Component
 public class InputValidator {
 
-    public void validateSignUpRequest(SignupRequest signupRequest) {
+    public static void validateSignUpRequest(SignupRequest signupRequest) {
         if (signupRequest == null) {
             throw new IllegalArgumentException("Signup request cannot be null.");
         }
@@ -24,23 +24,23 @@ public class InputValidator {
             throw new IllegalArgumentException("Name and last name cannot be empty.");
         }
 
-        Integer age = signupRequest.getAge();
-        if (age == null || age <= 0 || age > 120) {
+        int age = signupRequest.getAge();
+        if (age <= 0 || age > 120) {
             throw new IllegalArgumentException("Age must be between 1 and 120.");
         }
 
-        Double height = signupRequest.getHeight();
-        if (height == null || height <= 0) {
+        double height = signupRequest.getHeight();
+        if (height <= 0) {
             throw new IllegalArgumentException("Height must be a positive number.");
         }
 
-        Double weight = signupRequest.getWeight();
-        if (weight == null || weight <= 0) {
+        double weight = signupRequest.getWeight();
+        if (weight <= 0) {
             throw new IllegalArgumentException("Weight must be a positive number.");
         }
 
-        Double weightGoal = signupRequest.getWeightGoal();
-        if (weightGoal == null || weightGoal <= 0) {
+        double weightGoal = signupRequest.getWeightGoal();
+        if (weightGoal <= 0) {
             throw new IllegalArgumentException("Weight goal must be a positive number.");
         }
 
@@ -49,17 +49,17 @@ public class InputValidator {
         validateEnum(signupRequest.getCaloricAdjustment(), UserProfile.CaloricAdjustment.class, "caloric adjustment");
     }
 
-    public void validateAdvisorInput(Double height, Double weight) {
-        if ( height == null || weight == null || height <= 0|| weight <= 0) {
+    public static void validateAdvisorInput(double height, double weight) {
+        if (height <= 0|| weight <= 0) {
             throw new IllegalArgumentException("Height / Weight values not found.");
         }
     }
 
-    private boolean isBlank(String str) {
+    private static boolean isBlank(String str) {
         return str == null || str.trim().isEmpty();
     }
 
-    private <T extends Enum<T>> void validateEnum(String value, Class<T> enumClass, String fieldName) {
+    private static <T extends Enum<T>> void validateEnum(String value, Class<T> enumClass, String fieldName) {
         try {
             Enum.valueOf(enumClass, value);
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class InputValidator {
         }
     }
 
-    public void emailInputValidator(String email) {
+    public static void emailInputValidator(String email) {
         String EMAIL_PATTERN = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
         Pattern pattern = Pattern.compile(EMAIL_PATTERN);
 
@@ -81,7 +81,7 @@ public class InputValidator {
         }
     }
 
-    public void passwordInputValidator(String password) {
+    public static void passwordInputValidator(String password) {
         int MIN_LENGTH = 8;
         int MAX_LENGTH = 128;
 
@@ -116,5 +116,9 @@ public class InputValidator {
         if (!password.matches(".*[!@#$%^&*()\\-_=+\\\\|\\[{\\]};:'\",<.>/?].*")) {
             throw new IllegalArgumentException("Password must contain at least one special character");
         }
+    }
+
+    public static double roundUpToTwoDecimals(double value) {
+        return Math.ceil(value * 100) / 100.0;
     }
 }

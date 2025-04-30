@@ -4,26 +4,32 @@ import com.nutria.app.dto.SignupRequest;
 import com.nutria.app.dto.SuggestedGoal;
 import com.nutria.app.model.UserCredential;
 import com.nutria.app.model.UserProfile;
+import com.nutria.app.repository.UserCredentialRepository;
 import com.nutria.app.repository.UserProfileRepository;
 import com.nutria.app.utility.InputValidator;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import static com.nutria.app.utility.InputValidator.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
-    private final InputValidator inputValidator;
+    private final UserCredentialRepository userCredentialRepository;
+    private final JwtService jwtService;
 
     public UserProfile saveUserProfile(UserCredential userCredential, SignupRequest signupRequest) {
         try {
-            inputValidator.validateSignUpRequest(signupRequest);
+            validateSignUpRequest(signupRequest);
 
             double bmr = calculateBmr(signupRequest);
             double bmi = calculateBmi(signupRequest);
@@ -54,34 +60,32 @@ public class UserProfileService {
         }
     }
 
-    // === CALCULATIONS ===
-
     public double calculateBmr(SignupRequest req) {
         int gen = getGenderCode(req.getGender());
-        return (10 * req.getWeight()) + (6.25 * req.getHeight()) - (5 * req.getAge()) + gen;
+        return roundUpToTwoDecimals(10 * req.getWeight() + 6.25 * req.getHeight() - 5 * req.getAge() + gen);
     }
 
-    public Double calculateBmi(SignupRequest req) {
-        return calculateBmi(req.getHeight(), req.getWeight());
+    public double calculateBmi(SignupRequest req) {
+        return roundUpToTwoDecimals(calculateBmi(req.getHeight(), req.getWeight()));
     }
 
-    public Double calculateBmi(double height, double weight) {
-        return weight / Math.pow(height / 100, 2);
+    public double calculateBmi(double height, double weight) {
+        return roundUpToTwoDecimals(weight / Math.pow(height / 100, 2));
     }
 
-    public Double calculateTdee(double bmr, String activityLevel) {
-        return bmr * getActivityLevel(activityLevel);
+    public double calculateTdee(double bmr, String activityLevel) {
+        return roundUpToTwoDecimals(bmr * getActivityLevel(activityLevel));
     }
 
-    public Double calculateTdeeAdjusted(double bmr, SignupRequest req) {
+    public double calculateTdeeAdjusted(double bmr, SignupRequest req) {
         double baseTdee = calculateTdee(bmr, req.getActivityLevel());
         double adjustment = getCaloricAdjustment(req.getCaloricAdjustment());
-        return baseTdee + (baseTdee * adjustment);
+        return roundUpToTwoDecimals(baseTdee * (1 + adjustment));
     }
 
     public SuggestedGoal suggestedGoal(double height, double weight) {
 
-        inputValidator.validateAdvisorInput(height, weight);
+        validateAdvisorInput(height, weight);
 
         double bmi = calculateBmi(height, weight);
         SuggestedGoal suggestedGoal = new SuggestedGoal();
@@ -94,23 +98,29 @@ public class UserProfileService {
         }
 
         double heightM = height / 100;
-        suggestedGoal.setMinWeight(UserProfile.BmiBalance.MAINTAIN.getMinBmi() * heightM * heightM);
-        suggestedGoal.setMaxWeight(UserProfile.BmiBalance.MAINTAIN.getMaxBmi() * heightM * heightM);
+        suggestedGoal.setMinWeight(roundUpToTwoDecimals(UserProfile.BmiBalance.MAINTAIN.getMinBmi() * heightM * heightM));
+        suggestedGoal.setMaxWeight(roundUpToTwoDecimals(UserProfile.BmiBalance.MAINTAIN.getMaxBmi() * heightM * heightM));
 
         return suggestedGoal;
     }
 
     // === ENUM HELPERS ===
-    private Integer getGenderCode(String gender) {
+    private int getGenderCode(String gender) {
         return UserProfile.Gender.valueOf(gender).getValue();
     }
 
-    private Double getActivityLevel(String level) {
+    private double getActivityLevel(String level) {
         return UserProfile.ActivityLevel.valueOf(level).getValue();
     }
 
-    private Double getCaloricAdjustment(String adjustment) {
+    private double getCaloricAdjustment(String adjustment) {
         return UserProfile.CaloricAdjustment.valueOf(adjustment).getValue();
+    }
+
+    public UserProfile getUserProfile(String token) {
+        String email = jwtService.extractEmail(token);
+        UserCredential userCredential = userCredentialRepository.findByEmail(email).orElseThrow(() -> new AuthenticationServiceException("Profile of the user not found"));
+        return userProfileRepository.findUserProfileByUserCredential(userCredential).orElseThrow(() -> new AuthenticationServiceException("User "+userCredential.getEmail()+" does not have a profile"));
     }
 }
 
