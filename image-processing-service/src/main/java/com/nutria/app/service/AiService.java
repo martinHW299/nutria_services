@@ -70,39 +70,18 @@ public class AiService {
     }
 
     private Map<String, Object> buildGeminiPayload(String image64, double temperature) {
-//        String prompt = """
-//            Analyze the food item in this image and return a SINGLE JSON object (not a list) with the following fields:
-//            - "description" (name of the food),
-//            - "calories" (in Kcal),
-//            - "proteins" (in grams),
-//            - "carbohydrates" (in grams),
-//            - "fats" (in grams),
-//            - "serving_size" (in grams).
-//
-//            Example response format:
-//            {
-//              "description": "Grilled Chicken",
-//              "calories": 165,
-//              "proteins": 31,
-//              "carbohydrates": 0,
-//              "fats": 3.6,
-//              "serving_size": 100
-//            }
-//
-//            If no food is detected, return null.
-//        """;
-
         String prompt = """
-                Analyze the food item in the provided image. Provide a SINGLE JSON object with the following nutrient information, focusing on accuracy and detail. If you are uncertain about a value, please provide a reasonable estimate rather than leaving the field blank. Use the following fields:
-                
+                You are a nutrition analysis expert. Carefully analyze the food shown in the image.
+                Return a SINGLE JSON object with the following nutrient information:
                 - "description": The name of the food, including any specific details about the preparation or sauce.
                 - "calories": The total calories in kilocalories (kcal).
                 - "proteins": The protein content in grams (g).
                 - "carbohydrates": The carbohydrate content in grams (g).
                 - "fats": The fat content in grams (g).
                 - "serving_size": The estimated serving size in grams (g) based on the image.
-                
-                Important: Provide the response as a SINGLE JSON object, not a list or other format. If no food is detectable, return null.
+                Use real-world nutrition values. Do NOT round calories to 250, 350, 500, or 550 unless they are clearly appropriate.
+                Estimate serving size realistically. Avoid default numbers unless justified.
+                Your response should be specific, image-based, and accurate — not generic.
                 """;
 
         return Map.of(

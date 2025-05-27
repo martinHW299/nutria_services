@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FoodImageService {
 
-    //@Value("${image.path.upload}")
+//    @Value("${image.path.upload}")
     @Value("${FOOD_IMAGES_DIR:/app/food-images}")
     private String FOLDER_PATH;
 
