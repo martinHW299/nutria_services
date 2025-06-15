@@ -26,7 +26,7 @@ public class JwtService {
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        log.info("token: {}", token);
+//        log.info("token: {}", token);
         final Claims claims = extractAllClaims(token.replace("Bearer ", "").trim());
         return claimsResolver.apply(claims);
     }

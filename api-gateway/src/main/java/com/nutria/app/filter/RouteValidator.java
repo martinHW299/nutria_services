@@ -15,6 +15,8 @@ public class RouteValidator {
             "/api/v1/auth/validate",
             "/api/v1/auth/advisor",
             "/api/v1/auth/logout",
+            "/api/v1/auth/health",
+            "/api/v1/gateway/tokens/cache/stats",
             "/eureka"
     );
 

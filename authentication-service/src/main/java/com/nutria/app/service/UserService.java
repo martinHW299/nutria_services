@@ -18,9 +18,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import static com.nutria.app.utility.InputValidator.emailInputValidator;
-import static com.nutria.app.utility.InputValidator.passwordInputValidator;
+import java.util.HashMap;
+import java.util.Map;
 
+import static com.nutria.app.utility.InputValidator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,10 +37,10 @@ public class UserService {
 
     public UserProfile signup(SignupRequest signupRequest) {
 
+        validateSignUpRequest(signupRequest);
         validateSignupEmail(signupRequest.getEmail());
-
-        emailInputValidator(signupRequest.getEmail());
-        passwordInputValidator(signupRequest.getPassword());
+//        emailInputValidator(signupRequest.getEmail());
+//        passwordInputValidator(signupRequest.getPassword());
 
         UserCredential userCredential = createUserCredential(signupRequest);
         userCredentialRepository.save(userCredential);
@@ -91,7 +92,40 @@ public class UserService {
         userCredential.setPassword(passwordEncoder.encode(request.getConfirmNewPassword()));
         userCredentialRepository.save(userCredential);
 
-        return "Password changed successfully.";
+        // Revoke all existing tokens for security after password change
+        tokenService.revokeAllUserTokens(userCredential);
+
+        return "Password changed successfully. Please login again.";
+    }
+
+    /**
+     * Revoke all tokens for a user (useful for security incidents)
+     */
+    public String revokeAllUserTokens(String token) {
+        String email = jwtService.extractEmail(token);
+        UserCredential userCredential = userCredentialRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthenticationServiceException("User not found"));
+
+        tokenService.revokeAllUserTokens(userCredential);
+        return "All tokens revoked successfully";
+    }
+
+    /**
+     * Get token statistics for monitoring
+     */
+    public Map<String, Object> getTokenStatistics(String token) {
+        String email = jwtService.extractEmail(token);
+        UserCredential userCredential = userCredentialRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthenticationServiceException("User not found"));
+
+        int validTokenCount = tokenService.countValidTokensByUser(userCredential);
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("userEmail", email);
+        stats.put("validTokenCount", validTokenCount);
+        stats.put("timestamp", System.currentTimeMillis());
+
+        return stats;
     }
 
     // === Helpers ===

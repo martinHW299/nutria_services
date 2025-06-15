@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class FallBackController {
     @RequestMapping("/fallbackCall")
     public ResponseEntity<ApiResponse<?>> authFallback() {
-        return ResponseEntity.ok(ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE, "Sorry, the service is currently unavailable. Please try again later."));
+        return ResponseEntity.ok(ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE, "Lo sentimos, el servicio se encuentra en mantenimiento. Por favor, intente nuevamente dentro de un momento."));
     }
 }

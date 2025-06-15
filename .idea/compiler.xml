@@ -18,8 +18,8 @@
         <module name="image-processing-service" />
         <module name="api-gateway" />
         <module name="trace-nutrition-service" />
-        <module name="authentication-service" />
         <module name="eureka-service-registry" />
+        <module name="authentication-service" />
         <module name="common-library" />
       </profile>
     </annotationProcessing>

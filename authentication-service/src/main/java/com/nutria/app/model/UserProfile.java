@@ -47,7 +47,7 @@ public class UserProfile {
     @Getter
     public enum Gender {
         MALE("M", 5),
-        FEMALE("F", 161);
+        FEMALE("F", -161);
 
         private final String code;
         private final int value;
@@ -97,14 +97,17 @@ public class UserProfile {
 
     @Getter
     public enum CaloricAdjustment {
-
+        LOSS(-0.2), //20%
         MAINTAIN(0),
-        LOSS_LIGHT(-0.1), //10%
-        LOSS_MODERATE(-0.2), //20%
-        GAIN_LIGHT(0.1), //10%
-        GAIN_MODERATE(0.15), //15%
-        GAIN_AGGRESSIVE(0.2), //20%
-        GAIN_VERY_AGGRESSIVE(0.25); //25%
+        GAIN(0.05); //5%
+
+//        MAINTAIN(0),
+//        LOSS_LIGHT(-0.1), //10%
+//        LOSS_MODERATE(-0.2), //20%
+//        GAIN_LIGHT(0.1), //10%
+//        GAIN_MODERATE(0.15), //15%
+//        GAIN_AGGRESSIVE(0.2), //20%
+//        GAIN_VERY_AGGRESSIVE(0.25); //25%
 
         private final double value;
 

@@ -117,7 +117,7 @@ public class ProgressTraceService {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(firstDayWeek);
 
-        String[] dayFlags = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"};
+        String[] dayFlags = {"lun", "mar", "mie", "jue", "vir", "sab", "dom"};
 
         for (int i = 0; i < 7; i++) {
             Date day = calendar.getTime();
@@ -163,7 +163,7 @@ public class ProgressTraceService {
             }
 
             List<MacrosData> weekData = fetchMacrosData(token, firstDayWeek, lastDayWeek);
-            MacrosSummary summary = calculateSummary(token, "week "+ i, weekData, firstDayWeek, lastDayWeek);
+            MacrosSummary summary = calculateSummary(token, "sem "+ i, weekData, firstDayWeek, lastDayWeek);
             weeklySummaries.add(summary);
 
             calendar.setTime(lastDayWeek);

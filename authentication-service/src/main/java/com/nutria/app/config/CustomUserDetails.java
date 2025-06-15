@@ -18,7 +18,6 @@ public class CustomUserDetails implements UserDetails {
         this.password = userCredential.getPassword();
     }
 
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return null;

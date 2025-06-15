@@ -29,8 +29,7 @@ public class UserProfileService {
 
     public UserProfile saveUserProfile(UserCredential userCredential, SignupRequest signupRequest) {
         try {
-            validateSignUpRequest(signupRequest);
-
+//            validateSignUpRequest(signupRequest);
             double bmr = calculateBmr(signupRequest);
             double bmi = calculateBmi(signupRequest);
             double tdee = calculateTdeeAdjusted(bmr, signupRequest);
@@ -62,7 +61,7 @@ public class UserProfileService {
 
     public double calculateBmr(SignupRequest req) {
         int gen = getGenderCode(req.getGender());
-        return roundUpToTwoDecimals(10 * req.getWeight() + 6.25 * req.getHeight() - 5 * req.getAge() + gen);
+        return roundUpToTwoDecimals((10 * req.getWeight()) + (6.25 * req.getHeight()) - (5 * req.getAge()) + gen);
     }
 
     public double calculateBmi(SignupRequest req) {
@@ -80,6 +79,7 @@ public class UserProfileService {
     public double calculateTdeeAdjusted(double bmr, SignupRequest req) {
         double baseTdee = calculateTdee(bmr, req.getActivityLevel());
         double adjustment = getCaloricAdjustment(req.getCaloricAdjustment());
+//        log.info("adjustment: {}", adjustment);
         return roundUpToTwoDecimals(baseTdee * (1 + adjustment));
     }
 
@@ -120,6 +120,7 @@ public class UserProfileService {
     public UserProfile getUserProfile(String token) {
         String email = jwtService.extractEmail(token);
         UserCredential userCredential = userCredentialRepository.findByEmail(email).orElseThrow(() -> new AuthenticationServiceException("Profile of the user not found"));
+//        log.info("Token: {} \nEmail: {} \nUserCredential: {}", token, email, userCredential);
         return userProfileRepository.findUserProfileByUserCredential(userCredential).orElseThrow(() -> new AuthenticationServiceException("User "+userCredential.getEmail()+" does not have a profile"));
     }
 }

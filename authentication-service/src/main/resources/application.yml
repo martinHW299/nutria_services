@@ -17,6 +17,9 @@ spring:
     database: ${DB}
     database-platform: ${DB_PLT}
 
+  webflux:
+    base-path: /
+
 server:
     port: ${PORT}
 
@@ -31,9 +34,16 @@ eureka:
       hostname: localhost
 
 application:
-    security:
-      jwt:
-        secret-key: ${KEY}
-        expiration: ${EXPIRATION}
+  security:
+    jwt:
+      secret-key: ${KEY}
+      expiration: ${EXPIRATION}
+  gateway:
+    url: ${GATEWAY_URL}
+
+logging:
+  level:
+    com.nutria.app: ${LOG_LEVEL}
+    org.springframework.web.reactive.function.client: ${WEBCLIENT_LOG_LEVEL}
 
 

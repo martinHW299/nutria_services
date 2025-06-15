@@ -39,9 +39,9 @@ public class AiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
-        log.info("response: {}", response);
+//        log.info("response: {}", response);
 
-        // Extract text from response
+//        Extract text from response
         return extractTextFromResponse(response);
     }
 
@@ -71,17 +71,14 @@ public class AiService {
 
     private Map<String, Object> buildGeminiPayload(String image64, double temperature) {
         String prompt = """
-                You are a nutrition analysis expert. Carefully analyze the food shown in the image.
-                Return a SINGLE JSON object with the following nutrient information:
-                - "description": The name of the food, including any specific details about the preparation or sauce.
-                - "calories": The total calories in kilocalories (kcal).
-                - "proteins": The protein content in grams (g).
-                - "carbohydrates": The carbohydrate content in grams (g).
-                - "fats": The fat content in grams (g).
-                - "serving_size": The estimated serving size in grams (g) based on the image.
-                Use real-world nutrition values. Do NOT round calories to 250, 350, 500, or 550 unless they are clearly appropriate.
-                Estimate serving size realistically. Avoid default numbers unless justified.
-                Your response should be specific, image-based, and accurate — not generic.
+                Analyze the food image with expertise in nutrition and provide a detailed breakdown of its macronutrients in a JSON object.\s
+                The output should include the following fields:\s
+                   - 'description': A **brief, one-line** description in **Spanish**, stating what the food is, without details about cooking method, texture, or visual presentation.\s
+                   - 'calories': The total caloric content in kilocalories (kcal), using real-world nutrition values and avoiding arbitrary rounding.\s
+                   - 'proteins': The protein content in grams (g).\s
+                   - 'carbohydrates': The carbohydrate content in grams (g).\s
+                   - 'fats': The fat content in grams (g).\s
+                   - 'serving_size': An estimated serving size in grams (g), based on a realistic assessment of the image.
                 """;
 
         return Map.of(
@@ -101,8 +98,9 @@ public class AiService {
                 },
                 "generationConfig", Map.of(
                         "temperature", temperature,
-                        "response_mime_type", "application/json",
-                        "maxOutputTokens", 800
+                        "topP", 1.0,
+                        "maxOutputTokens", 800,
+                        "response_mime_type", "application/json"
                 )
         );
     }

@@ -30,7 +30,7 @@ public class JwtService {
         claims.put("id", userCredential.getId());
         claims.put("weight", userProfile.getWeight());
         claims.put("weightGoal", userProfile.getWeightGoal());
-        //claims.put("activityLevel", userProfile.getActivityLevel());
+//        claims.put("activityLevel", userProfile.getActivityLevel());
         claims.put("bmr", userProfile.getBmr());
         claims.put("bmi", userProfile.getBmi());
         claims.put("tdee", userProfile.getTdee());
