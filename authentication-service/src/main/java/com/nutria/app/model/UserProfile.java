@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "user_profile")
+@Table(name = "user_profiles")
 public class UserProfile {
 
     @Id
@@ -31,10 +31,10 @@ public class UserProfile {
     private double weight;
     private double weightGoal;
     private double activityLevel;
+    private String caloricAdjustment;
     private double bmr;
     private double bmi;
     private double tdee;
-    private double caloricAdjustment;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -95,26 +95,32 @@ public class UserProfile {
     }
 
 
-    @Getter
     public enum CaloricAdjustment {
-        LOSS(-0.2), //20%
-        MAINTAIN(0),
-        GAIN(0.05); //5%
+        LOSE_025(-0.25, "Lose 0.25 kg/week"),
+        LOSE_050(-0.50, "Lose 0.5 kg/week"),
+        LOSE_100(-1.00, "Lose 1 kg/week"),
+        MAINTAIN(0.0, "Maintain weight"),
+        GAIN_025(0.25, "Gain 0.25 kg/week"),
+        GAIN_050(0.50, "Gain 0.5 kg/week");
 
-//        MAINTAIN(0),
-//        LOSS_LIGHT(-0.1), //10%
-//        LOSS_MODERATE(-0.2), //20%
-//        GAIN_LIGHT(0.1), //10%
-//        GAIN_MODERATE(0.15), //15%
-//        GAIN_AGGRESSIVE(0.2), //20%
-//        GAIN_VERY_AGGRESSIVE(0.25); //25%
+        private final double kgPerWeek;
+        private final String description;
 
-        private final double value;
+        CaloricAdjustment(double kgPerWeek, String description) {
+            this.kgPerWeek = kgPerWeek;
+            this.description = description;
+        }
 
-        CaloricAdjustment(double value) {
-            this.value = value;
+        /** Value in kg/week (positive = gain, negative = loss) */
+        public double getValue() {
+            return kgPerWeek;
+        }
+
+        public String getDescription() {
+            return description;
         }
     }
+
 
 
 }

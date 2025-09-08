@@ -1,5 +1,7 @@
 package com.nutria.app.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,101 +9,491 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class AiService {
 
+    // Constants
+    private static final String DATA_IMAGE_PREFIX = "data:image/png;base64,";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final double MAX_REASONABLE_SERVING_SIZE = 2000.0;
+    private static final int OPENAI_MAX_TOKENS = 300;
+    private static final int GEMINI_MAX_TOKENS = 800;
+    private static final double PRECISION_FACTOR = 100.0;
+
+    // Configuration
     @Value("${gemini.api.url}")
     private String geminiApiUrl;
 
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
+    @Value("${openai.api.url}")
+    private String openaiApiUrl;
+
+    @Value("${openai.api.key}")
+    private String openaiApiKey;
+
+    @Value("${openai.api.model}")
+    private String openaiModel;
+
     private final WebClient webClient;
+    private final ObjectMapper objectMapper;
 
-    public AiService(WebClient.Builder webClientBuilder) {
+    public AiService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.webClient = webClientBuilder.build();
+        this.objectMapper = objectMapper;
     }
 
-    public String getAnswer(String image64, double temperature) {
-        // Build request payload
-        Map<String, Object> request = buildGeminiPayload(image64, temperature);
+    public Map<String, Object> analyzeFood(String base64Image, Double userServingSize, double temperature) {
+        validateInputs(base64Image, temperature);
 
-        // Make the API call
-        Map<String, Object> response = webClient.post()
-                .uri(geminiApiUrl + geminiApiKey)
-                .header("Content-Type", "application/json")
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                .block();
-//        log.info("response: {}", response);
-
-//        Extract text from response
-        return extractTextFromResponse(response);
-    }
-
-    private String extractTextFromResponse(Map<String, Object> response) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-
-            if (candidates != null && !candidates.isEmpty()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-
-                if (content != null) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-
-                    if (parts != null && !parts.isEmpty()) {
-                        return (String) parts.get(0).get("text");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new ValidationException(e.getMessage());
+        if (userServingSize != null) {
+            return analyzeFoodWithFixedServing(base64Image, userServingSize, temperature);
         }
-        return null;
+        return analyzeFoodWithEstimatedServing(base64Image, temperature);
     }
 
-    private Map<String, Object> buildGeminiPayload(String image64, double temperature) {
-        String prompt = """
-                Analyze the food image with expertise in nutrition and provide a detailed breakdown of its macronutrients in a JSON object.\s
-                The output should include the following fields:\s
-                   - 'description': A **brief, one-line** description in **Spanish**, stating what the food is, without details about cooking method, texture, or visual presentation.\s
-                   - 'calories': The total caloric content in kilocalories (kcal), using real-world nutrition values and avoiding arbitrary rounding.\s
-                   - 'proteins': The protein content in grams (g).\s
-                   - 'carbohydrates': The carbohydrate content in grams (g).\s
-                   - 'fats': The fat content in grams (g).\s
-                   - 'serving_size': An estimated serving size in grams (g), based on a realistic assessment of the image.
-                """;
+    // Private methods for main workflow
 
+    private Map<String, Object> analyzeFoodWithFixedServing(String base64Image, Double userServingSize, double temperature) {
+        Double sanitizedServing = sanitizeServingSize(userServingSize);
+
+        // Optional shadow run for description hint
+        String descriptionHint = getShadowDescription(base64Image);
+
+        FoodMacros macros = estimateMacrosWithGemini(base64Image, descriptionHint, sanitizedServing, temperature);
+
+        return buildAnalysisResult(
+                macros.description(),
+                sanitizedServing,
+                "user",
+                macros,
+                null,
+                macros.rawResponse()
+        );
+    }
+
+    private Map<String, Object> analyzeFoodWithEstimatedServing(String base64Image, double temperature) {
+        FoodPortion portion = estimatePortionWithGptMini(base64Image, temperature);
+        FoodMacros macros = estimateMacrosWithGemini(base64Image, portion.description(), portion.servingSize(), temperature);
+
+        return buildAnalysisResult(
+                macros.description(),
+                portion.servingSize(),
+                "model",
+                macros,
+                portion.rawResponse(),
+                macros.rawResponse()
+        );
+    }
+
+    private String getShadowDescription(String base64Image) {
+        try {
+            FoodPortion shadowPortion = estimatePortionWithGptMini(base64Image, 0.0);
+            return shadowPortion.description();
+        } catch (Exception e) {
+            log.debug("Shadow description estimation failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // OpenAI GPT-mini integration
+
+    public FoodPortion estimatePortionWithGptMini(String base64Image, double temperature) {
+        try {
+            Map<String, Object> payload = buildOpenAiPayload(base64Image, temperature);
+            Map<String, Object> response = callOpenAi(payload);
+            log.info("estimatePortionWithGptMini: {}", payload, "Response: {}", response);
+            return parseOpenAiResponse(response);
+        } catch (Exception e) {
+            log.error("OpenAI portion estimation failed", e);
+            throw new ValidationException("Portion estimation failed: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> buildOpenAiPayload(String base64Image, double temperature) {
         return Map.of(
-                "contents", new Object[]{
-                        Map.of(
-                                "parts", new Object[]{
-                                        Map.of("text", prompt),
-                                        Map.of(
-                                                "inline_data", Map.of(
-                                                        "mime_type",
-                                                        "image/png",
-                                                        "data", image64
-                                                )
-                                        )
-                                }
-                        )
-                },
-                "generationConfig", Map.of(
-                        "temperature", temperature,
-                        "topP", 1.0,
-                        "maxOutputTokens", 800,
-                        "response_mime_type", "application/json"
+                "model", openaiModel,
+                "temperature", temperature,
+                "max_tokens", OPENAI_MAX_TOKENS,
+                "response_format", Map.of("type", "json_object"),
+                "messages", List.of(
+                        buildSystemMessage(),
+                        buildUserMessage(base64Image)
                 )
         );
     }
+
+    private Map<String, Object> buildSystemMessage() {
+        return Map.of("role", "system", "content",
+                """
+                You are an expert nutritionist-visual analyst. From the image, identify the main food 
+                (short English name) and estimate ONE standard serving weight in grams.
+                Use reliable scale cues (plate/utensils/hands/container), food state (raw/cooked/unknown) 
+                and density (liquid/semi-solid/solid/leafy).
+                Convert visible quantity to mL (unit map or geometry) before grams using realistic density priors. 
+                Respond with JSON only.
+                """);
+    }
+
+    private Map<String, Object> buildUserMessage(String base64Image) {
+        return Map.of(
+                "role", "user",
+                "content", List.of(
+                        Map.of("type", "text", "text", buildUserPrompt()),
+                        Map.of("type", "image_url", "image_url",
+                                Map.of("url", DATA_IMAGE_PREFIX + base64Image))
+                )
+        );
+    }
+
+    private String buildUserPrompt() {
+        return """
+        Analyze the image and identify ALL visible food components. For each food item, estimate its serving size in grams.
+        Think step by step but do NOT show your reasoning in the output.
+
+        ### ANALYSIS APPROACH (internal use only)
+        1. Scan the entire image for all food items (main dishes, sides, sauces, garnishes, drinks)
+        2. Estimate portion size for each component using visual cues
+        3. Use scale references: plate (26-28cm), utensils, hands, containers
+        4. Consider food state: raw/cooked affects density and weight
+        5. Apply realistic portion sizes for meal context
+
+        ### MEASUREMENT GUIDELINES (do not output)
+        Volume conversions: cup=240mL, tbsp=15mL, tsp=5mL, bowl≈400mL
+        Density estimates:
+        - Liquids: ≈240g/cup (water, juices, broths)
+        - Semi-solids: ≈240±40g/cup (yogurt, sauces, purees)
+        - Cooked grains: ≈150-180g/cup (rice, pasta, quinoa)
+        - Leafy vegetables: ≈25-40g/cup (lettuce, spinach, herbs)
+        - Diced vegetables: ≈130-170g/cup (carrots, onions, peppers)
+        - Proteins: ≈200-250g/cup (meat, fish, chicken pieces)
+        - Nuts/seeds: ≈140-160g/cup
+        
+        Portion estimation tips:
+        - Palm size ≈ 80-120g protein
+        - Fist size ≈ 200-300g vegetables/fruits
+        - Thumb size ≈ 15-30g fats/oils
+        - Cupped hand ≈ 150-200g grains/starches
+
+        ### OUTPUT FORMAT (STRICT JSON ONLY)
+        If SINGLE food item detected:
+        {"description":"<food name in English>","serving_size":<float>}
+        
+        If MULTIPLE food items detected:
+        {
+          "description":"<primary dish name>",
+          "serving_size":<total_weight_float>,
+          "components":[
+            {"name":"<component1_name>","serving_size":<float>},
+            {"name":"<component2_name>","serving_size":<float>},
+            {"name":"<component3_name>","serving_size":<float>}
+          ]
+        }
+
+        ### EXAMPLES (for reference only)
+        Single item: {"description":"grilled salmon","serving_size":150.0}
+        
+        Multiple items: {
+          "description":"chicken rice bowl",
+          "serving_size":380.0,
+          "components":[
+            {"name":"grilled chicken breast","serving_size":120.0},
+            {"name":"white rice","serving_size":200.0},
+            {"name":"steamed broccoli","serving_size":60.0}
+          ]
+        }
+
+        Return ONLY the JSON response, no other text.
+        """;
+    }
+
+    private Map<String, Object> callOpenAi(Map<String, Object> payload) {
+        return webClient.post()
+                .uri(openaiApiUrl)
+                .header(CONTENT_TYPE_HEADER, APPLICATION_JSON)
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + openaiApiKey)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+    }
+
+    private FoodPortion parseOpenAiResponse(Map<String, Object> response) {
+        Map<String, Object> data = extractOpenAiJson(response);
+        if (data == null) {
+            throw new ValidationException("No valid JSON from OpenAI");
+        }
+
+        String description = (String) data.get("description");
+        if (description == null || description.isBlank()) {
+            throw new ValidationException("Missing food description");
+        }
+
+        Double servingSize = Optional.ofNullable(data.get("serving_size"))
+                .map(Number.class::cast)
+                .map(Number::doubleValue)
+                .orElse(null);
+
+        // Handle multiple components if present
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> components = (List<Map<String, Object>>) data.get("components");
+
+        if (components != null && !components.isEmpty()) {
+            log.info("Detected {} food components", components.size());
+
+            // Log each component for debugging
+            for (Map<String, Object> component : components) {
+                String componentName = (String) component.get("name");
+                Number componentSize = (Number) component.get("serving_size");
+                log.info("Component: {} - {}g", componentName, componentSize);
+            }
+
+            // You could enhance this to create a more detailed description
+
+            description = description + " (" +
+                    components.stream()
+                            .map(comp -> (String) comp.get("name"))
+                            .reduce((a, b) -> a + ", " + b)
+                            .orElse("") +
+                    ")";
+        }
+
+        return new FoodPortion(description, servingSize, response);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractOpenAiJson(Map<String, Object> response) {
+        try {
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            if (choices == null || choices.isEmpty()) return null;
+
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            if (message == null) return null;
+
+            String content = (String) message.get("content");
+            if (content == null) return null;
+
+            return objectMapper.readValue(content, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.warn("Failed to parse OpenAI JSON response: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // Gemini integration
+
+    public FoodMacros estimateMacrosWithGemini(String base64Image, String descriptionHint,
+                                               Double servingSizeGrams, double temperature) {
+        try {
+            Map<String, Object> payload = buildGeminiPayload(base64Image, descriptionHint, servingSizeGrams, temperature);
+            Map<String, Object> response = callGemini(payload);
+            return parseGeminiResponse(response);
+        } catch (Exception e) {
+            log.error("Gemini macros estimation failed", e);
+            throw new ValidationException("Macros estimation failed: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> buildGeminiPayload(String base64Image, String descriptionHint,
+                                                   Double servingSizeGrams, double temperature) {
+        String prompt = buildGeminiPrompt(descriptionHint, servingSizeGrams);
+
+        return Map.of(
+                "contents", new Object[]{
+                        Map.of("parts", new Object[]{
+                                Map.of("text", prompt),
+                                Map.of("inline_data", Map.of(
+                                        "mime_type", "image/png",
+                                        "data", base64Image))
+                        })
+                },
+                "generationConfig", Map.of(
+                        "temperature", temperature,
+                        "maxOutputTokens", GEMINI_MAX_TOKENS,
+                        "response_mime_type", APPLICATION_JSON
+                )
+        );
+    }
+
+    private String buildGeminiPrompt(String descriptionHint, Double servingSizeGrams) {
+        return String.format("""
+        You are an expert nutritionist. Analyze the food image and calculate precise nutritional values.
+        
+        GUIDANCE PROVIDED:
+        - Food description: %s
+        - Estimated serving size: %s grams
+        
+        TASK:
+        Use the provided description and serving size as guidance to estimate accurate nutritional values.
+        Cross-reference the image to verify the food matches the description and adjust if needed.
+        
+        NUTRITIONAL CALCULATION GUIDELINES:
+        - Use authoritative sources: USDA FoodData Central, NHANES, ASA24, MyPlate guidelines
+        - Consider cooking method, preparation style, and ingredients visible in the image
+        - Account for typical recipes and ingredient proportions for this food type
+        - If multiple components are visible, calculate combined nutritional values
+        - Adjust for actual portion size shown vs. standard serving sizes
+        
+        ANALYSIS APPROACH:
+        1. Verify the food description matches what you see in the image
+        2. Identify all visible components (protein, carbs, fats, vegetables, sauces)
+        3. Estimate the nutritional density per 100g for this specific food
+        4. Scale to the provided serving size
+        5. Consider cooking oils, seasonings, and preparation methods that affect nutrition
+        
+        QUALITY CHECKS:
+        - Calories should align with macronutrient composition (protein=4 cal/g, carbs=4 cal/g, fats=9 cal/g)
+        - Values should be realistic for the food type and portion size
+        - Account for water content, cooking method, and ingredient ratios
+        
+        JSON OUTPUT (return ONLY this JSON, no other text):
+        {
+          "description": "accurate Spanish description of the food",
+          "calories": <float>,
+          "proteins": <float>,
+          "carbohydrates": <float>,
+          "fats": <float>,
+          "serving_size": <float>
+        }
+        
+        EXAMPLE CALCULATIONS:
+        - 150g grilled chicken breast: ~248 cal, ~47g protein, ~0g carbs, ~5g fat
+        - 200g white rice: ~260 cal, ~5g protein, ~53g carbs, ~1g fat
+        - 100g mixed vegetables: ~25 cal, ~2g protein, ~5g carbs, ~0g fat
+        
+        Important: The serving_size in your response should match the provided serving size (%s grams).
+        Focus on accurate nutritional analysis based on both the image and the guidance provided.
+        """,
+                (descriptionHint == null || descriptionHint.isBlank()) ? "not provided" : descriptionHint,
+                servingSizeGrams == null ? "not provided" : servingSizeGrams.toString(),
+                servingSizeGrams == null ? "standard portion" : servingSizeGrams.toString()
+        );
+    }
+
+    private Map<String, Object> callGemini(Map<String, Object> payload) {
+        return webClient.post()
+                .uri(geminiApiUrl + geminiApiKey)
+                .header(CONTENT_TYPE_HEADER, APPLICATION_JSON)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+    }
+
+    private FoodMacros parseGeminiResponse(Map<String, Object> response) {
+        String jsonText = extractTextFromGemini(response);
+        if (jsonText == null || jsonText.isBlank()) {
+            throw new ValidationException("Empty Gemini response");
+        }
+
+        try {
+            Map<String, Object> data = objectMapper.readValue(jsonText, new TypeReference<>() {});
+            return new FoodMacros(
+                    (String) data.get("description"),
+                    ((Number) data.get("calories")).doubleValue(),
+                    ((Number) data.get("proteins")).doubleValue(),
+                    ((Number) data.get("carbohydrates")).doubleValue(),
+                    ((Number) data.get("fats")).doubleValue(),
+                    ((Number) data.get("serving_size")).doubleValue(),
+                    response
+            );
+        } catch (Exception e) {
+            throw new ValidationException("Failed to parse Gemini response: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractTextFromGemini(Map<String, Object> response) {
+        try {
+            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+            if (candidates == null || candidates.isEmpty()) return null;
+
+            Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+            if (content == null) return null;
+
+            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+            if (parts == null || parts.isEmpty()) return null;
+
+            Object text = parts.get(0).get("text");
+            return text == null ? null : text.toString();
+        } catch (Exception e) {
+            throw new ValidationException("Failed to extract text from Gemini response: " + e.getMessage());
+        }
+    }
+
+    // Utility methods
+
+    private void validateInputs(String base64Image, double temperature) {
+        if (base64Image == null || base64Image.isBlank()) {
+            throw new ValidationException("Base64 image cannot be null or empty");
+        }
+        if (temperature < 0.0 || temperature > 2.0) {
+            throw new ValidationException("Temperature must be between 0.0 and 2.0");
+        }
+    }
+
+    private Double sanitizeServingSize(Double value) {
+        if (value == null) return null;
+        if (value <= 0) {
+            throw new ValidationException("Serving size must be greater than 0 grams");
+        }
+        if (value > MAX_REASONABLE_SERVING_SIZE) {
+            log.warn("Unusually large serving size: {} g", value);
+        }
+        return Math.round(value * PRECISION_FACTOR) / PRECISION_FACTOR;
+    }
+
+    private Map<String, Object> buildAnalysisResult(String description, Double servingSize,
+                                                    String servingSource, FoodMacros macros,
+                                                    Map<String, Object> portionStage,
+                                                    Map<String, Object> macrosStage) {
+
+        Map<String, Object> result = Map.of(
+                "success", true,
+                "description", description,
+                "serving_size", servingSize,
+                "serving_source", servingSource,
+                "macros", Map.of(
+                        "calories", macros.calories(),
+                        "proteins", macros.proteins(),
+                        "carbohydrates", macros.carbohydrates(),
+                        "fats", macros.fats()
+                )
+        );
+
+        if (portionStage != null) {
+            result = Map.of(
+                    "success", true,
+                    "description", description,
+                    "serving_size", servingSize,
+                    "serving_source", servingSource,
+                    "macros", Map.of(
+                            "calories", macros.calories(),
+                            "proteins", macros.proteins(),
+                            "carbohydrates", macros.carbohydrates(),
+                            "fats", macros.fats()
+                    ),
+                    "portion_stage", portionStage,
+                    "macros_stage", macrosStage
+            );
+        }
+
+        return result;
+    }
+
+    // Record classes for type safety
+    private record FoodPortion(String description, Double servingSize, Map<String, Object> rawResponse) {}
+
+    private record FoodMacros(String description, double calories, double proteins,
+                              double carbohydrates, double fats, double servingSize,
+                              Map<String, Object> rawResponse) {}
 }

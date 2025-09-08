@@ -19,4 +19,20 @@ public class SignupRequest {
     private double weightGoal;
     private String activityLevel;
     private String caloricAdjustment;
+
+/*
+{
+  "name": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "StrongPassword123",
+  "age": 30,
+  "gender": "MALE",
+  "height": 175,
+  "weight": 70,
+  "weightGoal": 65,
+  "activityLevel": "MODERATE",
+  "caloricAdjustment": "LOSE_050"
+}
+ */
 }

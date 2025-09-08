@@ -35,8 +35,14 @@ image:
 
 gemini:
   api:
-    url: ${API_URL}
-    key: ${API_KEY}
+    url: ${API_GEMINI_URL}
+    key: ${API_GEMINI_KEY}
+
+openai:
+  api:
+    url: ${API_OPENAI_URL}
+    key: ${API_OPENAI_KEY}
+    model: gpt-4.1-mini-2025-04-14
 
 eureka:
   client:

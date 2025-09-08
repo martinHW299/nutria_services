@@ -59,7 +59,7 @@ public class NutritionTraceController {
 
     @GetMapping("/get-weekly-intake")
     public ResponseEntity<ApiResponse<List<MacrosSummary>>> getWeeklyIntake(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
             @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date
     ) {
         return ResponseEntity.ok(ApiResponse.success(progressTraceService.fetchWeeklyMacrosData(token, date)));
@@ -68,7 +68,7 @@ public class NutritionTraceController {
 
     @GetMapping("/get-monthly-intake")
     public ResponseEntity<ApiResponse<List<MacrosSummary>>> getMonthlyWeeklyIntake(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
             @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date
     ) {
         return ResponseEntity.ok(ApiResponse.success(progressTraceService.fetchMonthlyMacrosData(token, date)));

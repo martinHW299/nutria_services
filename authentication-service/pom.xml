@@ -79,6 +79,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <mainClass>com.nutria.app.AuthenticationServiceApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

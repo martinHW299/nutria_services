@@ -134,4 +134,4 @@ networks:
 
 volumes:
   mongodb-data: {}
-  food-images:
+  food-images: {}

@@ -37,10 +37,8 @@ public class UserService {
 
     public UserProfile signup(SignupRequest signupRequest) {
 
-        validateSignUpRequest(signupRequest);
-        validateSignupEmail(signupRequest.getEmail());
-//        emailInputValidator(signupRequest.getEmail());
-//        passwordInputValidator(signupRequest.getPassword());
+        emailInputValidator(signupRequest.getEmail());
+        passwordInputValidator(signupRequest.getPassword());
 
         UserCredential userCredential = createUserCredential(signupRequest);
         userCredentialRepository.save(userCredential);
@@ -59,8 +57,8 @@ public class UserService {
 
     public String login(LoginRequest loginRequest) {
 
-        emailInputValidator(loginRequest.getEmail());
-        passwordInputValidator(loginRequest.getPassword());
+//        emailInputValidator(loginRequest.getEmail());
+//        passwordInputValidator(loginRequest.getPassword());
 
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
