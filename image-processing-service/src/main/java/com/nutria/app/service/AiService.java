@@ -2,6 +2,12 @@ package com.nutria.app.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.vertexai.api.Content;
+import com.google.cloud.vertexai.api.GenerateContentResponse;
+import com.google.cloud.vertexai.api.Part;
+import com.google.cloud.vertexai.generativeai.ContentMaker;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
+import com.google.cloud.vertexai.generativeai.PartMaker;
 import com.nutria.common.exceptions.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +15,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +35,7 @@ public class AiService {
     private static final int GEMINI_MAX_TOKENS = 800;
     private static final double PRECISION_FACTOR = 100.0;
 
+
     // Configuration
     @Value("${gemini.api.url}")
     private String geminiApiUrl;
@@ -46,10 +54,20 @@ public class AiService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final GenerativeModel generativeModel; // Make it final and private
 
-    public AiService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+    public AiService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, GenerativeModel generativeModel) {
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
+        this.generativeModel = generativeModel;
+
+        // Add validation
+        if (this.generativeModel == null) {
+            log.error("GenerativeModel is null - Vertex AI functionality will not work");
+            throw new IllegalArgumentException("GenerativeModel cannot be null. Check your GeminiConfiguration bean setup.");
+        }
+
+        log.info("AiService initialized with GenerativeModel successfully");
     }
 
     public Map<String, Object> analyzeFood(String base64Image, Double userServingSize, double temperature) {
@@ -69,7 +87,9 @@ public class AiService {
         // Optional shadow run for description hint
         String descriptionHint = getShadowDescription(base64Image);
 
-        FoodMacros macros = estimateMacrosWithGemini(base64Image, descriptionHint, sanitizedServing, temperature);
+//        FoodMacros macros = estimateMacrosWithGemini(base64Image, descriptionHint, sanitizedServing, temperature);
+
+        FoodMacros macros = estimateMacrosWithVertexAI(base64Image, descriptionHint, sanitizedServing, temperature);
 
         return buildAnalysisResult(
                 macros.description(),
@@ -83,7 +103,8 @@ public class AiService {
 
     private Map<String, Object> analyzeFoodWithEstimatedServing(String base64Image, double temperature) {
         FoodPortion portion = estimatePortionWithGptMini(base64Image, temperature);
-        FoodMacros macros = estimateMacrosWithGemini(base64Image, portion.description(), portion.servingSize(), temperature);
+//        FoodMacros macros = estimateMacrosWithGemini(base64Image, portion.description(), portion.servingSize(), temperature);
+        FoodMacros macros = estimateMacrosWithVertexAI(base64Image, portion.description(), portion.servingSize(), temperature);
 
         return buildAnalysisResult(
                 macros.description(),
@@ -387,6 +408,161 @@ public class AiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
+    }
+
+    public FoodMacros estimateMacrosWithVertexAI(String base64Image, String descriptionHint,
+                                                 Double servingSizeGrams, double temperature) {
+        try {
+            String prompt = buildGeminiPrompt(descriptionHint, servingSizeGrams);
+            log.info("Vertex AI Prompt: {}", prompt);
+
+            // Decode base64 image to bytes
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+            log.info("Image size: {} bytes", imageBytes.length);
+
+            // Create parts separately for better debugging
+            Content content = ContentMaker.fromMultiModalData(
+                    PartMaker.fromMimeTypeAndData("image/png", imageBytes),
+                    prompt  // Pass the prompt string directly, not as a Part
+            );
+
+            log.info("Content created successfully with {} parts", content.getPartsList().size());
+
+            // Try without custom generation config first to see if that's the issue
+            try {
+                log.info("Attempting Vertex AI call without custom config...");
+                GenerateContentResponse response = generativeModel.generateContent(content);
+                log.info("Vertex AI response received");
+
+                // Debug the full response
+                log.info("Response candidates count: {}", response.getCandidatesCount());
+                if (response.getCandidatesCount() > 0) {
+                    var candidate = response.getCandidates(0);
+                    log.info("First candidate content parts count: {}", candidate.getContent().getPartsCount());
+                    if (candidate.getContent().getPartsCount() > 0) {
+                        String responseText = candidate.getContent().getParts(0).getText();
+                        log.info("Response text length: {}", responseText.length());
+                        log.info("Response text preview: {}", responseText.substring(0, Math.min(200, responseText.length())));
+                    }
+                }
+
+                return parseVertexAIResponse(response);
+
+            } catch (Exception e) {
+                log.error("Failed with default config, trying with custom generation config", e);
+
+                // Fallback: try with custom generation config
+                com.google.cloud.vertexai.api.GenerationConfig generationConfig =
+                        com.google.cloud.vertexai.api.GenerationConfig.newBuilder()
+                                .setTemperature(Math.max(0.1f, (float) temperature)) // Ensure minimum temperature
+                                .setMaxOutputTokens(GEMINI_MAX_TOKENS)
+                                // Remove response_mime_type for now to see if that's causing issues
+                                // .setResponseMimeType(APPLICATION_JSON)
+                                .build();
+
+                GenerativeModel configuredModel = generativeModel.withGenerationConfig(generationConfig);
+                GenerateContentResponse response = configuredModel.generateContent(content);
+
+                return parseVertexAIResponse(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Vertex AI macros estimation failed", e);
+            // Include more details in the exception
+            throw new ValidationException("Macros estimation failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
+    private FoodMacros parseVertexAIResponse(GenerateContentResponse response) {
+        try {
+            log.info("Parsing Vertex AI response...");
+
+            // Check if response has candidates
+            if (response.getCandidatesCount() == 0) {
+                log.error("No candidates in Vertex AI response");
+                throw new ValidationException("No candidates in Vertex AI response");
+            }
+
+            var candidate = response.getCandidates(0);
+
+            // Check if candidate has content
+            if (!candidate.hasContent() || candidate.getContent().getPartsCount() == 0) {
+                log.error("No content in Vertex AI response candidate");
+                throw new ValidationException("No content in Vertex AI response candidate");
+            }
+
+            // Extract text from the first part
+            String jsonText = candidate.getContent().getParts(0).getText();
+            log.info("Raw response text: {}", jsonText);
+
+            if (jsonText.isBlank()) {
+                log.error("Empty text in Vertex AI response");
+                throw new ValidationException("Empty text in Vertex AI response");
+            }
+
+            String cleanedJson = jsonText.trim();
+
+            cleanedJson = cleanedJson.replaceAll("```json\\s*", "")
+                    .replaceAll("```\\s*$", "")
+                    .replaceAll("^```\\s*", "")
+                    .trim();
+
+            // Find JSON object if response contains extra text
+            int jsonStart = cleanedJson.indexOf("{");
+            int jsonEnd = cleanedJson.lastIndexOf("}");
+
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                cleanedJson = cleanedJson.substring(jsonStart, jsonEnd + 1);
+            }
+
+            log.info("Cleaned JSON: {}", cleanedJson);
+
+            // Parse JSON
+            Map<String, Object> data;
+            try {
+                data = objectMapper.readValue(cleanedJson, new TypeReference<>() {});
+            } catch (Exception jsonException) {
+                log.error("Failed to parse JSON: {}", cleanedJson, jsonException);
+                throw new ValidationException("Failed to parse JSON response: " + jsonException.getMessage());
+            }
+
+            // Validate required fields
+            if (!data.containsKey("description") || !data.containsKey("calories") ||
+                    !data.containsKey("proteins") || !data.containsKey("carbohydrates") ||
+                    !data.containsKey("fats") || !data.containsKey("serving_size")) {
+                log.error("Missing required fields in response: {}", data.keySet());
+                throw new ValidationException("Missing required nutritional fields in response");
+            }
+
+            // Create simplified rawResponse for compatibility
+            Map<String, Object> rawResponse = Map.of(
+                    "candidates", List.of(Map.of(
+                            "content", Map.of(
+                                    "parts", List.of(Map.of("text", jsonText))
+                            )
+                    ))
+            );
+
+            FoodMacros result = new FoodMacros(
+                    (String) data.get("description"),
+                    ((Number) data.get("calories")).doubleValue(),
+                    ((Number) data.get("proteins")).doubleValue(),
+                    ((Number) data.get("carbohydrates")).doubleValue(),
+                    ((Number) data.get("fats")).doubleValue(),
+                    ((Number) data.get("serving_size")).doubleValue(),
+                    rawResponse
+            );
+
+            log.info("Successfully parsed FoodMacros: {}", result.description());
+            return result;
+
+        } catch (ValidationException e) {
+            // Re-throw validation exceptions as-is
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error parsing Vertex AI response", e);
+            throw new ValidationException("Failed to parse Vertex AI response: " + e.getMessage());
+        }
     }
 
     private FoodMacros parseGeminiResponse(Map<String, Object> response) {

@@ -1,5 +1,12 @@
 package com.nutria.app.controller;
 
+import com.google.cloud.vertexai.api.Content;
+import com.google.cloud.vertexai.api.GenerateContentRequest;
+import com.google.cloud.vertexai.api.GenerateContentResponse;
+import com.google.cloud.vertexai.generativeai.ContentMaker;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
+import com.google.cloud.vertexai.generativeai.PartMaker;
+import com.google.cloud.vertexai.generativeai.ResponseHandler;
 import com.nutria.app.dto.IngestionTraceDTO;
 import com.nutria.app.dto.MacrosDataRequest;
 import com.nutria.app.dto.AdvancedAnalysisRequest;
@@ -17,7 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +41,19 @@ public class ImageProcessingController {
     private final IngestionTraceService ingestionTraceService;
     private final MacrosDataService macrosDataService;
     private final AiService aiService;
+    private final GenerativeModel generativeModel;
 
-    // ==================== EXISTING ENDPOINTS (UNCHANGED) ====================
+    @PostMapping("/test-vertex")
+    public String testVertex() throws Exception {
+        try {
+            // Use the correct API - ContentMaker.fromText() for text-only content
+            Content content = ContentMaker.fromString("Say 'Hello World' in JSON format: {\"message\": \"Hello World\"}");
+            GenerateContentResponse response = generativeModel.generateContent(content);
+            return ResponseHandler.getText(response);
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
 
     @PostMapping("/save")
     public CompletableFuture<ResponseEntity<ApiResponse<IngestionTrace>>> save(

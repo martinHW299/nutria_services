@@ -37,6 +37,11 @@ gemini:
   api:
     url: ${API_GEMINI_URL}
     key: ${API_GEMINI_KEY}
+  vertex:
+    key: ${API_GEMINI_KEY_VERTEX}
+    id: ${PROJECT_ID}
+    location: ${PROJECT_LOCATION}
+    model: ${GEMINI_MODEL}
 
 openai:
   api:
