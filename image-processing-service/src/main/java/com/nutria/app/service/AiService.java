@@ -132,7 +132,7 @@ public class AiService {
         try {
             Map<String, Object> payload = buildOpenAiPayload(base64Image, temperature);
             Map<String, Object> response = callOpenAi(payload);
-            log.info("estimatePortionWithGptMini: {}", payload, "Response: {}", response);
+            log.info("estimatePortionWithGptMini: {} {} {}", payload, "Response: {}", response);
             return parseOpenAiResponse(response);
         } catch (Exception e) {
             log.error("OpenAI portion estimation failed", e);
